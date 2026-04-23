@@ -1,0 +1,3099 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>最美麗的紅花 - 紅色劇場</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000000; touch-action: none; font-family: "MingLiU", "PMingLiU", "Courier New", serif; user-select: none; -webkit-user-select: none; }
+        canvas { cursor: none; } /* 隱藏畫布上的預設游標 */
+
+        /* --- 開場畫面 --- */
+        #intro-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 200; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 2.5s ease-out, visibility 2.5s; cursor: pointer; }
+        .noise-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noise)" opacity="0.04" fill="%23fff"/%3E%3C/svg%3E'); opacity: 0.5; animation: grain 8s steps(10) infinite; pointer-events: none; }
+        @keyframes grain { 0%,100%{transform:translate(0,0);} 10%{transform:translate(-5%,-5%);} 30%{transform:translate(3%,4%);} 50%{transform:translate(-2%,6%);} 70%{transform:translate(5%,-3%);} 90%{transform:translate(-3%,0%);} }
+        #envelope-canvas { width: min(80vw, 400px); height: min(50vh, 250px); display: block; z-index: 10; filter: drop-shadow(0 0 20px rgba(255,255,255,0.1)); }
+        #typewriter-container { margin-top: 30px; min-height: 120px; width: 80%; max-width: 600px; text-align: center; z-index: 15; font-family: "Times New Roman", serif; pointer-events: none; }
+        #typewriter-text { color: rgba(255, 255, 255, 0.7); font-size: 1.1rem; letter-spacing: 3px; line-height: 2.0; display: inline; white-space: pre-wrap; text-shadow: 0 0 8px rgba(255,255,255,0.2); }
+        #typewriter-cursor { display: inline-block; width: 2px; margin-left: 2px; color: rgba(255, 255, 255, 0.8); font-size: 1.2rem; animation: blink 1s step-end infinite; }
+        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+        .intro-hint { position: absolute; bottom: 8%; color: rgba(255, 255, 255, 0.25); font-size: 0.8rem; letter-spacing: 6px; text-transform: uppercase; animation: breathe 4s ease-in-out infinite; z-index: 15; opacity: 0; transition: opacity 1s; }
+        @keyframes breathe { 0%,100%{opacity:0.15;} 50%{opacity:0.5;} }
+
+        /* --- 遊戲主渲染與 UI --- */
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; transition: opacity 2s; }
+        #vignette { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(50,0,0,0.4) 80%, rgba(0,0,0,0.9) 100%), repeating-linear-gradient(45deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(20,0,0,0.1) 3px, rgba(0,0,0,0) 4px); pointer-events: none; transition: background 0.1s ease-out, opacity 0.5s; z-index: 5; opacity: 0.8; }
+        
+        #ui-layer { position: absolute; bottom: 5%; width: 100%; display: none; justify-content: center; z-index: 10; pointer-events: none; }
+        #cough-btn { pointer-events: auto; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.4); color: rgba(255, 255, 255, 0.7); padding: 15px 40px; font-size: 1.2rem; border-radius: 5px; letter-spacing: 8px; cursor: pointer; transition: all 0.1s; backdrop-filter: blur(2px); }
+        #cough-btn:active { background: rgba(180, 0, 0, 0.3); border-color: #ff2222; color: #ff2222; transform: scale(0.95); }
+        
+        #reticle { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; transition: all 0.2s; display: none; }
+        #gaze-progress { position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; border: 2px solid transparent; border-top-color: #ff0000; border-radius: 50%; transform: translate(-50%, -50%) rotate(0deg); z-index: 9; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+        
+        #interaction-hint { position: absolute; top: 55%; width: 100%; text-align: center; color: rgba(255, 255, 255, 0.8); font-size: 1.05rem; letter-spacing: 2px; opacity: 0; transition: opacity 0.3s; z-index: 10; pointer-events: none; text-shadow: 0 0 5px #000; }
+        #inference-text { position: absolute; top: 60%; width: 100%; text-align: center; color: rgba(200, 50, 50, 0.9); font-size: 1.15rem; letter-spacing: 3px; opacity: 0; transition: opacity 0.5s; z-index: 10; pointer-events: none; font-style: italic; }
+        
+        /* 紅色劇場打臉文字 */
+        #reckoning-text { position: absolute; top: 70%; width: 100%; text-align: center; color: #ff0000; font-size: 1.5rem; letter-spacing: 10px; opacity: 0; transition: opacity 0.2s; z-index: 160; pointer-events: none; font-weight: bold; text-shadow: 0 0 15px rgba(255,0,0,0.8); font-family: "MingLiU", serif; }
+
+        .desktop-hint { position: absolute; top: 5%; left: 5%; color: rgba(255,255,255,0.3); font-family: sans-serif; font-size: 0.95rem; z-index: 10; display: none; transition: all 0.3s;}
+        #task-panel { position: absolute; left: 5%; top: 15%; width: min(430px, 86vw); z-index: 30; background: linear-gradient(180deg, rgba(20,0,0,0.86), rgba(0,0,0,0.78)); border: 1px solid rgba(255,110,110,0.42); color: #ffdede; padding: 10px 12px; line-height: 1.55; letter-spacing: 1px; display: none; }
+        #task-day { color: #ffb8b8; font-size: 0.95rem; margin-bottom: 4px; letter-spacing: 2px; }
+        #task-diary { color: rgba(255,235,235,0.86); font-size: 0.9rem; margin-bottom: 6px; white-space: pre-wrap; }
+        #task-objective { color: #ffaaaa; font-size: 0.9rem; white-space: pre-wrap; }
+        #tutorial-card { position: absolute; right: 4%; top: 7%; max-width: min(430px, 80vw); background: linear-gradient(180deg, rgba(20,0,0,0.84), rgba(0,0,0,0.75)); border: 1px solid rgba(255,90,90,0.45); box-shadow: 0 0 25px rgba(255,0,0,0.15); color: rgba(255,235,235,0.95); z-index: 25; padding: 14px 18px; letter-spacing: 1px; line-height: 1.65; font-size: 1rem; opacity: 0; transform: translateY(-8px); pointer-events: none; transition: opacity 0.6s ease, transform 0.6s ease; }
+        #tutorial-card.show { opacity: 1; transform: translateY(0); }
+        #settings-btn { position: absolute; right: 4%; top: 4%; z-index: 35; background: rgba(20,0,0,0.75); color: #ffdede; border: 1px solid rgba(255,120,120,0.55); padding: 8px 14px; letter-spacing: 2px; cursor: pointer; font-family: inherit; display: none; }
+        #settings-panel { position: fixed; right: 4%; top: 10%; width: min(360px, 88vw); background: rgba(0,0,0,0.9); border: 1px solid rgba(255,110,110,0.55); box-shadow: 0 0 24px rgba(255,0,0,0.18); z-index: 10020; padding: 16px; display: none; }
+        #settings-panel h3 { margin: 0 0 12px 0; color: #ffdede; font-size: 1.1rem; letter-spacing: 3px; }
+        .setting-row { margin: 10px 0 12px; color: #ffdede; font-size: 0.95rem; }
+        .setting-row label { display: block; margin-bottom: 6px; }
+        .setting-row input[type="range"] { width: 100%; accent-color: #ff5555; }
+        .setting-row .val { color: #ffaaaa; margin-left: 6px; }
+        #settings-close { margin-top: 8px; width: 100%; background: #220000; color: #ffdddd; border: 1px solid #ff6666; padding: 8px 10px; cursor: pointer; }
+        #joystick-base { position: absolute; bottom: 15%; left: 10%; width: 80px; height: 80px; border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; display: none; z-index: 8; }
+        #joystick-stick { position: absolute; top: 50%; left: 50%; width: 30px; height: 30px; background: rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%, -50%); }
+
+        /* --- 讀信模式 --- */
+        #letter-reading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 150; display: none; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 1s; cursor: pointer; }
+        #letter-reading-text { color: #fff; font-size: 1.1rem; line-height: 2.2; letter-spacing: 4px; max-width: 80%; text-shadow: 0 0 10px rgba(255,255,255,0.3); text-align: left; white-space: pre-wrap; display: inline; }
+        .close-hint { margin-top: 50px; color: rgba(255,255,255,0.3); font-size: 0.8rem; letter-spacing: 4px; opacity: 0; transition: opacity 1s;}
+
+        /* --- 結局與夜間 --- */
+        #night-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000000; z-index: 50; display: none; opacity: 0; transition: opacity 1.5s; flex-direction: column; align-items: center; pointer-events: none; }
+        #day-title { position: absolute; top: 20%; color: #FFFFFF; font-family: "Times New Roman", serif; font-size: 1.8rem; letter-spacing: 5px; z-index: 52; }
+        #sleep-progress-container { position: absolute; bottom: 10%; width: 80%; height: 2px; background: rgba(255,255,255,0.1); z-index: 52; }
+        #sleep-progress-bar { width: 0%; height: 100%; background: #880000; box-shadow: 0 0 5px #ff0000; transition: width 6s linear; }
+        #wake-flash { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(0,0,0,0.55) 72%, rgba(0,0,0,0.85) 100%); z-index: 60; opacity: 0; pointer-events: none; display: none; }
+        
+        #ending-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 200; display: none; flex-direction: column; justify-content: center; align-items: center; opacity: 0; transition: opacity 3s; pointer-events: auto;}
+        #ending-text { color: #fff; font-size: 1.1rem; line-height: 2.5; letter-spacing: 5px; max-width: 80%; text-align: left; white-space: pre-wrap; text-shadow: 0 0 10px rgba(255,255,255,0.4); }
+        
+        /* 假回饋與碎片化提示 UI */
+        #fake-hint { position: absolute; top: 30%; width: 100%; text-align: center; color: rgba(255,255,255,0.8); font-size: 1.2rem; letter-spacing: 6px; z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.5s; font-style: italic; text-shadow: 0 0 8px rgba(255,0,0,0.6); }
+        #ephemeral-text { position: absolute; bottom: 15%; right: 10%; color: #ff0000; font-size: 0.9rem; letter-spacing: 2px; opacity: 0; transition: opacity 0.5s; z-index: 150; pointer-events: none; }
+        
+        /* 碎片進度計數器 - 常駐但低透明度 */
+        #fragment-counter { position: absolute; bottom: 5%; left: 5%; color: #cc4444; font-size: 0.8rem; letter-spacing: 2px; opacity: 0.3; transition: opacity 0.5s; z-index: 10; pointer-events: none; font-family: monospace; text-shadow: 0 0 5px rgba(255,0,0,0.3); }
+        
+        .ghost-room-effect { filter: contrast(1.5) drop-shadow(0 0 10px rgba(255,0,0,0.3)); animation: glitch-anim 0.2s 5; }
+        .fake-flash { animation: inset-red-flash 0.8s ease-out; }
+        
+        @keyframes glitch-anim { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 60% { transform: translate(2px, 2px) } 80% { transform: translate(2px, -2px) } 100% { transform: translate(0) } }
+        @keyframes inset-red-flash { 0% { box-shadow: inset 0 0 80px rgba(255,0,0,0.5); background-color: rgba(255,255,255,0.05); } 100% { box-shadow: inset 0 0 0 rgba(255,0,0,0); background-color: transparent; } }
+    </style>
+
+    <style>
+    /* =========================================
+       記憶長廊 核心空間 (1920x1080 橫幅圖片版)
+    ========================================= */
+    #gallery-overlay {
+        position: fixed; left: 0; top: 0; width: 100%; height: 100%;
+        background-color: #000;
+        z-index: 10000; display: flex; flex-direction: column;
+        opacity: 0; pointer-events: none; transition: opacity 2s ease-in-out;
+    }
+    #gallery-overlay.active {
+        opacity: 1; pointer-events: auto;
+    }
+
+    .gallery-close-btn {
+        position: fixed; right: 40px; top: 40px; padding: 10px 20px;
+        background: transparent; color: rgba(255,255,255,0.3); border: none;
+        cursor: pointer; font-family: inherit; font-size: 14px; letter-spacing: 6px;
+        transition: 0.5s; z-index: 100;
+    }
+    .gallery-close-btn:hover {
+        color: #ffaaaa; text-shadow: 0 0 10px rgba(255,0,0,0.8);
+    }
+
+    #gallery-scroll-area {
+        position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+        overflow-x: auto; overflow-y: hidden; cursor: grab;
+        scroll-behavior: smooth; display: flex; align-items: center;
+    }
+    #gallery-scroll-area:active { cursor: grabbing; }
+    #gallery-scroll-area::-webkit-scrollbar { display: none; }
+    #gallery-scroll-area { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .corridor-bridge {
+        position: relative; height: 100%;
+    }
+
+    /* 進度線 */
+    .progress-line {
+        position: absolute; top: 75%;
+        left: 50vw;
+        height: 1px; background: rgba(255,255,255,0.1);
+        z-index: 1;
+    }
+    .dot {
+        position: absolute; top: -2px; width: 5px; height: 5px;
+        border-radius: 50%; background: rgba(255,255,255,0.1);
+        transition: background 1s ease, box-shadow 1s ease;
+    }
+    .dot.special { background: rgba(100,0,0,0.3); }
+    .dot.lit { background: rgba(255,255,255,0.6); box-shadow: 0 0 5px rgba(255,255,255,0.3); }
+    .dot.special.lit { background: #ff5555; box-shadow: 0 0 10px rgba(255,0,0,0.8); }
+
+    /* 畫作卡牌 (橫式寬幅) */
+    .gallery-card {
+        position: absolute;
+        width: 640px;   /* 16:9 基礎尺寸 */
+        height: 360px;
+        transform: translateX(-50%);
+        display: flex; justify-content: center; align-items: center;
+        opacity: 0;
+        transition: opacity 1.5s ease, box-shadow 0.8s ease;
+        cursor: default;
+    }
+    
+    .gallery-card.show { opacity: 1; }
+
+    .gallery-card.locked {
+        border: 1px solid rgba(255,255,255,0.02);
+        box-shadow: 0 0 10px rgba(255,255,255,0.01);
+    }
+    .locked-q {
+        font-size: 4rem; color: rgba(255,255,255,0.05);
+        text-shadow: 0 0 5px rgba(255,255,255,0.02);
+    }
+
+    .gallery-card.unlocked {
+        border: 1px solid rgba(255,255,255,0.3);
+        box-shadow: 0 0 15px rgba(255,0,0,0.1); cursor: pointer;
+    }
+    .gallery-img {
+        width: 100%; height: 100%; object-fit: contain;  /* 完整顯示，不裁切 */
+        opacity: 0.85; transition: opacity 0.5s;
+    }
+
+    .gallery-card.unlocked:hover {
+        box-shadow: 0 0 25px rgba(255,0,0,0.25); border-color: rgba(255,255,255,0.5);
+    }
+    .gallery-card.unlocked:hover .gallery-img { opacity: 1; }
+    .hover-caption {
+        position: absolute;
+        left: 50%;
+        bottom: -54px;
+        transform: translate(-50%, 8px);
+        width: min(86%, 520px);
+        color: #ffaaaa;
+        font-size: 14px;
+        letter-spacing: 1px;
+        line-height: 1.45;
+        text-align: center;
+        white-space: normal;
+        word-break: break-word;
+        opacity: 0;
+        transition: opacity 0.6s ease, transform 0.6s ease;
+        pointer-events: none;
+        text-shadow: 0 0 8px rgba(255,0,0,0.5);
+    }
+    .gallery-card.unlocked:hover .hover-caption {
+        opacity: 1;
+        transform: translate(-50%, -2px);
+    }
+
+    /* 第七幅畫的特權 (大尺寸 + 紅光) */
+    .gallery-card.final-card {
+        width: 768px;
+        height: 432px;
+    }
+    .gallery-card.final-card.unlocked {
+        border: 1px solid rgba(255,50,50,0.4);
+        box-shadow: 0 0 40px rgba(255,0,0,0.6), inset 0 0 10px rgba(255,0,0,0.2);
+    }
+    .gallery-card.final-card.unlocked:hover {
+        box-shadow: 0 0 60px rgba(255,0,0,0.8), inset 0 0 20px rgba(255,0,0,0.4);
+    }
+
+    /* 全螢幕檢視 (原比例顯示) */
+    #gallery-fullscreen {
+        position: fixed; left: 0; top: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.98); z-index: 10005; display: flex;
+        align-items: center; justify-content: center; opacity: 0; pointer-events: none;
+        transition: opacity 0.6s ease; cursor: zoom-out;
+    }
+    #gallery-fullscreen.active { opacity: 1; pointer-events: auto; }
+    #gallery-fullscreen img {
+        max-width: 95%; max-height: 95%; object-fit: contain;
+    }
+    </style>
+</head>
+<body>
+    <noscript>最美麗的紅花，是妳不相信自己正在開的那一朵。</noscript>
+
+    <div id="intro-screen">
+        <div class="noise-bg"></div><canvas id="envelope-canvas"></canvas>
+        <div id="typewriter-container"><div id="typewriter-text"></div><div id="typewriter-cursor">_</div></div>
+        <div class="intro-hint" id="intro-hint">點擊信封 睜開雙眼</div>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div id="vignette"></div>
+    <div class="desktop-hint" id="desktop-hint">空白鍵 / 按鈕 咳嗽<br>WASD 行走 / 點擊畫面鎖定視角 / 凝視異常進行推論 / H 再看教學</div>
+    <div id="task-panel">
+        <div id="task-day"></div>
+        <div id="task-diary"></div>
+        <div id="task-objective"></div>
+    </div>
+    <button id="settings-btn">設定 (M)</button>
+    <div id="settings-panel"></div>
+    <div id="joystick-base"><div id="joystick-stick"></div></div>
+    
+    <div id="reticle"></div>
+    <div id="gaze-progress"></div>
+    <div id="interaction-hint"></div>
+    <div id="inference-text"></div>
+    
+    <div id="reckoning-text">妳在騙自己。</div>
+    
+    <div id="fake-hint"></div>
+    <div id="ephemeral-text"></div>
+    <!-- 碎片進度初始化 -->
+    <div id="fragment-counter">&lt;記憶碎片：0/26&gt;</div>
+
+    <div id="ui-layer"><button id="cough-btn">咳 嗽</button></div>
+
+    <div id="letter-reading-screen">
+        <div><div id="letter-reading-text"></div><div id="typewriter-cursor" style="display:inline-block">_</div></div>
+        <div class="close-hint" id="letter-close-hint">點擊放下信件</div>
+    </div>
+
+    <div id="night-screen">
+        <div class="noise-bg" style="z-index: 51"></div>
+        <div id="day-title">Day 1</div>
+        <div id="sleep-progress-container"><div id="sleep-progress-bar"></div></div>
+    </div>
+    <div id="wake-flash"></div>
+    
+    <div id="ending-screen"><div id="ending-text"></div></div>
+    
+    <style id="ui-scaling">
+        /* 增大常用 UI 文字，改善可讀性 */
+        #desktop-hint, #fragment-counter, #ephemeral-text, #inference-text, #interaction-hint, #intro-hint, #reckoning-text, #fake-hint, #typewriter-text {
+            font-size: 21px !important;
+            line-height: 1.4 !important;
+        }
+        #fragment-counter { font-weight: 600; }
+        #poem-overlay, #gallery-overlay, #letter-reading-screen { font-size: 20px !important; }
+        #gallery-overlay div { font-size: 20px !important; }
+        #poem-overlay div { font-size: 20px !important; }
+        #letter-reading-text { font-size: 20px !important; line-height: 1.7 !important; }
+        #dev-panel { font-size: 14px !important; }
+        #intro-screen { font-size: 18px !important; }
+    </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const AudioEngine = {
+            ctx: null, heartbeatOsc: null, heartbeatGain: null, droneOsc: null, droneGain: null,
+            sfxVolume: 1.0,
+            init: function() { if(!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if(this.ctx.state === 'suspended') this.ctx.resume(); },
+            playScrape: function() { 
+                if(!this.ctx) return; const bufferSize = this.ctx.sampleRate * 0.2; const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate); const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                const noise = this.ctx.createBufferSource(); noise.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 3000 + Math.random() * 2000; filter.Q.value = 5;
+                const gain = this.ctx.createGain(); gain.gain.setValueAtTime(0.3 * this.sfxVolume, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+                noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination); noise.start();
+            },
+            playPaper: function() { 
+                if(!this.ctx) return; const bufferSize = this.ctx.sampleRate * 0.4; const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate); const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+                const noise = this.ctx.createBufferSource(); noise.buffer = buffer; const filter = this.ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 800;
+                const gain = this.ctx.createGain(); gain.gain.setValueAtTime(0, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(0.2 * this.sfxVolume, this.ctx.currentTime + 0.1); gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.4);
+                noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination); noise.start();
+            },
+            startHeartbeat: function(intensity = 1.0) { 
+                if(!this.ctx) return; if(this.heartbeatOsc) this.stopHeartbeat();
+                this.heartbeatOsc = this.ctx.createOscillator(); this.heartbeatOsc.type = 'sine'; this.heartbeatOsc.frequency.value = 40;
+                this.heartbeatGain = this.ctx.createGain(); this.heartbeatGain.gain.value = 0.5 * intensity * this.sfxVolume;
+                const lfo = this.ctx.createOscillator(); lfo.type = 'square'; lfo.frequency.value = 1.2 * intensity; 
+                const lfoGain = this.ctx.createGain(); lfoGain.gain.value = 0.5; lfo.connect(lfoGain); lfoGain.connect(this.heartbeatGain.gain);
+                this.heartbeatOsc.connect(this.heartbeatGain); this.heartbeatGain.connect(this.ctx.destination);
+                this.heartbeatOsc.start(); lfo.start();
+            },
+            stopHeartbeat: function() {
+                if(this.heartbeatGain) { this.heartbeatGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 1); setTimeout(() => { if(this.heartbeatOsc){ this.heartbeatOsc.stop(); this.heartbeatOsc = null; } }, 1000); }
+            },
+            startDrone: function() {
+                if(!this.ctx || this.droneOsc) return;
+                this.droneOsc = this.ctx.createOscillator(); this.droneOsc.type = 'triangle'; this.droneOsc.frequency.value = 55;
+                this.droneGain = this.ctx.createGain(); this.droneGain.gain.setValueAtTime(0, this.ctx.currentTime); this.droneGain.gain.linearRampToValueAtTime(0.1 * this.sfxVolume, this.ctx.currentTime + 5);
+                this.droneOsc.connect(this.droneGain); this.droneGain.connect(this.ctx.destination); this.droneOsc.start();
+            },
+            playChoke: function() { 
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, this.ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(0.5 * this.sfxVolume, this.ctx.currentTime + 0.1); gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.6);
+            },
+            playFakeKnock: function() { 
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(80, this.ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(0.8 * this.sfxVolume, this.ctx.currentTime + 0.05); gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.3);
+            },
+            playTapeWobble: function() { 
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+                osc.type = 'square'; osc.frequency.setValueAtTime(200, this.ctx.currentTime); osc.frequency.linearRampToValueAtTime(150, this.ctx.currentTime + 0.1); osc.frequency.linearRampToValueAtTime(300, this.ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0, this.ctx.currentTime); gain.gain.linearRampToValueAtTime(0.2 * this.sfxVolume, this.ctx.currentTime + 0.1); gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.4);
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + 0.5);
+            },
+            playBreath: function() { 
+                if(!this.ctx) return;
+                const noise = this.ctx.createBufferSource();
+                const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 2.0, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for(let i=0; i<buffer.length; i++) data[i] = (Math.random()*2-1)*0.2;
+                noise.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter(); filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(400, this.ctx.currentTime);
+                filter.frequency.linearRampToValueAtTime(800, this.ctx.currentTime + 1.0);
+                filter.frequency.linearRampToValueAtTime(400, this.ctx.currentTime + 2.0);
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.6 * this.sfxVolume, this.ctx.currentTime + 1.0);
+                gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 2.0);
+                noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+                noise.start();
+            },
+            // 人聲咳嗽（合成模擬，非真實錄音）
+            playHumanCough: function(intensity = 0.5) {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const duration = 0.3 + intensity * 0.4;
+                
+                // 濁音部分（喉音）
+                const osc1 = this.ctx.createOscillator();
+                const gain1 = this.ctx.createGain();
+                osc1.type = 'sawtooth';
+                osc1.frequency.setValueAtTime(150, now);
+                osc1.frequency.exponentialRampToValueAtTime(60, now + duration * 0.7);
+                gain1.gain.setValueAtTime(0, now);
+                gain1.gain.linearRampToValueAtTime(0.4 * intensity * this.sfxVolume, now + 0.05);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                
+                // 氣音部分
+                const osc2 = this.ctx.createOscillator();
+                const gain2 = this.ctx.createGain();
+                osc2.type = 'triangle';
+                osc2.frequency.setValueAtTime(300, now);
+                osc2.frequency.exponentialRampToValueAtTime(100, now + duration);
+                gain2.gain.setValueAtTime(0.1 * intensity * this.sfxVolume, now + 0.02);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.6);
+                
+                // 噪音（噴氣）
+                const bufferSize = Math.floor(this.ctx.sampleRate * duration);
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3));
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const noiseGain = this.ctx.createGain();
+                noiseGain.gain.setValueAtTime(0.3 * intensity * this.sfxVolume, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                
+                osc1.connect(gain1).connect(this.ctx.destination);
+                osc2.connect(gain2).connect(this.ctx.destination);
+                noise.connect(noiseGain).connect(this.ctx.destination);
+                
+                osc1.start(now); osc1.stop(now + duration);
+                osc2.start(now); osc2.stop(now + duration);
+                noise.start(now); noise.stop(now + duration);
+            },
+            playGentleTone: function() {
+                if(!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.2 * this.sfxVolume, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 1.5);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 1.5);
+            }
+        };
+
+        /* =========================================
+           D. 背景音樂引擎 (溫暖合成音樂)
+           完全以 Web Audio API 合成，無須外部音檔
+           ========================================= */
+        const MusicEngine = {
+            ctx: null,
+            masterGain: null,
+            currentTrack: null,
+            currentVariation: 0,
+            isPlaying: false,
+            timer: null,
+            notes: [],
+            baseVolume: 0.5,
+            // one-shot flag for playing the prime theme only once at reconciliation ending
+            playedPrime: false,
+
+            // 音符頻率對照表 (A4 = 440Hz)
+            freq: {
+                'C3':130.81,'D3':146.83,'E3':164.81,'F3':174.61,'G3':196.00,'A3':220.00,'B3':246.94,
+                'C4':261.63,'D4':293.66,'E4':329.63,'F4':349.23,'G4':392.00,'A4':440.00,'B4':493.88,
+                'C5':523.25,'D5':587.33,'E5':659.25,'F5':698.46,'G5':783.99,'A5':880.00
+            },
+
+            // 三首主旋律及母題（每首包含多種變體）
+            tracks: {
+                prime: {
+                    name: "母題（安真正想說的話）",
+                    variations: [
+                        { tempo: 0.95, octaveShift: 0, waveform: 'triangle', gain: 0.15,
+                            notes: [ ['C4',3], ['E4',3], ['G4',3], ['C5',6], ['A4',4], ['G4',2], ['E4',4], ['D4',3], ['E4',3], ['C4',8] ]
+                        }
+                    ]
+                },
+                an: {
+                    name: "安的主題（我以為我懂妳）",
+                    variations: [
+                        { tempo: 0.85, octaveShift: 0, waveform: 'triangle', gain: 0.25,
+                            notes: [ ['C4',4], ['F4',4], ['A4',4], ['D5',6], ['A4',4], ['G4',3], ['E4',3], ['D4',4], ['E4',3], ['C4',10] ]
+                        },
+                        { tempo: 0.75, octaveShift: 0, waveform: 'sine', gain: 0.18,
+                            notes: [ ['C4',5], ['F4',5], ['A4',5], ['D5',7], ['A4',5], ['G4',4], ['E4',4], ['D4',5], ['E4',3], ['C4',12] ]
+                        },
+                        { tempo: 0.65, octaveShift: -1, waveform: 'triangle', gain: 0.16,
+                            notes: [ ['C4',6], ['F4',6], ['A4',6], ['D5',8], ['A4',6], ['G4',4], ['E4',4], ['D4',6], ['E4',4], ['C4',14] ]
+                        }
+                    ]
+                },
+                cradle: {
+                    name: "紅花搖籃曲（我在安撫妳）",
+                    variations: [
+                        { tempo: 0.9, octaveShift: 0, waveform: 'triangle', gain: 0.22,
+                            notes: [ ['C4',3], ['E4',3], ['C4',3], ['G4',3], ['C5',3], ['G4',3], ['A4',4], ['G4',3], ['E4',3], ['D4',4], ['E4',3], ['C4',12] ]
+                        },
+                        { tempo: 0.8, octaveShift: 0, waveform: 'sine', gain: 0.18,
+                            notes: [ ['C4',4], ['E4',4], ['C4',4], ['G4',5], ['C5',5], ['G4',5], ['A4',5], ['G4',4], ['E4',4], ['D4',6], ['E4',3], ['C4',14] ]
+                        },
+                        { tempo: 0.65, octaveShift: -1, waveform: 'triangle', gain: 0.16,
+                            notes: [ ['C4',5], ['E4',5], ['C4',5], ['G4',6], ['C5',6], ['G4',6], ['A4',7], ['G4',5], ['E4',5], ['D4',8], ['E4',4], ['C4',18] ]
+                        }
+                    ]
+                },
+                waltz: {
+                    name: "失語者的華爾滋（我們什麼都沒說）",
+                    variations: [
+                        { tempo: 0.85, octaveShift: 0, waveform: 'triangle', gain: 0.25,
+                            notes: [ ['C4',4], ['E4',3], ['G4',4], ['C5',7], ['A4',4], ['G4',3], ['E4',7], ['D4',4], ['E4',3], ['C4',12] ]
+                        },
+                        { tempo: 0.75, octaveShift: 0, waveform: 'sine', gain: 0.2,
+                            notes: [ ['C4',5], ['E4',3], ['G4',5], ['C5',8], ['A4',5], ['G4',3], ['E4',8], ['D4',5], ['E4',3], ['C4',14] ]
+                        },
+                        { tempo: 0.6, octaveShift: -1, waveform: 'triangle', gain: 0.18,
+                            notes: [ ['C4',6], ['E4',4], ['G4',6], ['C5',10], ['A4',6], ['G4',4], ['E4',10], ['D4',6], ['E4',4], ['C4',18] ]
+                        }
+                    ]
+                }
+            },
+
+            // 播放一個音符（帶 ADSR 包絡與合音）
+            playNote(freq, duration, waveform, gain, octaveShift = 0) {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const actualFreq = freq * Math.pow(2, octaveShift);
+
+                const osc = this.ctx.createOscillator();
+                const noteGain = this.ctx.createGain();
+                osc.type = waveform;
+                osc.frequency.setValueAtTime(actualFreq, now);
+
+                const osc2 = this.ctx.createOscillator();
+                const noteGain2 = this.ctx.createGain();
+                osc2.type = waveform === 'triangle' ? 'sine' : 'triangle';
+                osc2.frequency.setValueAtTime(actualFreq * 1.5, now);
+
+                noteGain.gain.setValueAtTime(0, now);
+                noteGain.gain.linearRampToValueAtTime(gain, now + 0.03);
+                noteGain.gain.linearRampToValueAtTime(gain * 0.8, now + duration - 0.05);
+                noteGain.gain.linearRampToValueAtTime(0, now + duration);
+
+                noteGain2.gain.setValueAtTime(0, now);
+                noteGain2.gain.linearRampToValueAtTime(gain * 0.3, now + 0.02);
+                noteGain2.gain.linearRampToValueAtTime(0, now + duration - 0.03);
+
+                osc.connect(noteGain);
+                osc2.connect(noteGain2);
+                if (!this.masterGain) {
+                    this.masterGain = this.ctx.createGain(); this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime); this.masterGain.connect(this.ctx.destination);
+                }
+                noteGain.connect(this.masterGain);
+                noteGain2.connect(this.masterGain);
+
+                osc.start(now);
+                osc.stop(now + duration + 0.1);
+                osc2.start(now);
+                osc2.stop(now + duration + 0.1);
+            },
+
+            // 播放整段旋律
+            playSequence(variationData) {
+                if (!this.ctx) return;
+                const notes = variationData.notes;
+                const tempo = variationData.tempo;
+                const waveform = variationData.waveform;
+                const gain = variationData.gain;
+                const octaveShift = variationData.octaveShift || 0;
+                let time = 0;
+
+                this.stop();
+                // 音量淡入：確保 masterGain 存在並從 0 淡入到 baseVolume
+                if (!this.masterGain && this.ctx) { this.masterGain = this.ctx.createGain(); this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime); this.masterGain.connect(this.ctx.destination); }
+                if (this.masterGain && this.ctx) {
+                    const now = this.ctx.currentTime;
+                    try { this.masterGain.gain.cancelScheduledValues(now); } catch(e){}
+                    this.masterGain.gain.setValueAtTime(0, now);
+                    this.masterGain.gain.linearRampToValueAtTime(this.baseVolume, now + 3.0);
+                }
+                this.isPlaying = true;
+
+                const playNext = () => {
+                    if (!this.isPlaying) return;
+                    if (this.notes.length === 0) {
+                        this.notes = notes.slice();
+                        time = 0;
+                    }
+                    const [note, dur] = this.notes.shift();
+                    const freq = this.freq[note];
+                    const duration = (dur / tempo) * 0.5; // 每單位 0.5 秒
+                    this.playNote(freq, duration, waveform, gain, octaveShift);
+                    this.timer = setTimeout(playNext, duration * 1000);
+                };
+
+                this.notes = notes.slice();
+                playNext();
+            },
+
+            // 開始播放指定曲目與變體
+            play(trackKey, variationIndex = 0) {
+                if (!this.ctx) this.ctx = AudioEngine.ctx;
+                if (!this.ctx) return;
+                if (!this.masterGain) {
+                    this.masterGain = this.ctx.createGain();
+                    this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
+                    this.masterGain.connect(this.ctx.destination);
+                }
+                const track = this.tracks[trackKey];
+                if (!track) return;
+                const variation = track.variations[variationIndex] || track.variations[0];
+                this.currentTrack = trackKey;
+                this.currentVariation = variationIndex;
+                this.playSequence(variation);
+            },
+
+            stop() {
+                this.isPlaying = false;
+                if (this.timer) clearTimeout(this.timer);
+                this.notes = [];
+            },
+
+            switchVariation(variationIndex) {
+                if (this.currentTrack) {
+                    this.play(this.currentTrack, variationIndex);
+                }
+            }
+        };
+
+        // 遊戲狀態對應音樂變換的輔助函數
+        function updateMusicForState() {
+            if (!MusicEngine) return;
+            // 如果 AudioContext 尚未啟動，嘗試使用 AudioEngine.ctx
+            if (!MusicEngine.ctx && typeof AudioEngine !== 'undefined') MusicEngine.ctx = AudioEngine.ctx;
+            if (!MusicEngine.ctx) return;
+
+            if (gameState === 'ENDING') {
+                // 結局：若 reconciliation 且全碎片，播放母題（僅此一次）
+                if (typeof acceptance !== 'undefined' && acceptance >= 70 && playerCognition.collectedPoemFragments.size >= 26) {
+                    if (!MusicEngine.playedPrime) { MusicEngine.play('prime', 0); MusicEngine.playedPrime = true; }
+                } else {
+                    MusicEngine.play('waltz', 2);
+                }
+            } else if (gameState === 'COLLAPSE' || (typeof isCollapsing !== 'undefined' && isCollapsing)) {
+                // 切換到夜晚變體 (index 2)
+                if (MusicEngine.currentTrack) MusicEngine.switchVariation(2);
+            } else if (dreamPhase) {
+                MusicEngine.play('cradle', 2);
+            } else if (typeof hasAnyReckoningOccurred !== 'undefined' && hasAnyReckoningOccurred) {
+                // 被打臉過 → 失語者的華爾滋（懸置、無解）
+                MusicEngine.play('waltz', 0);
+            } else if (playerCognition.activeDelusions && playerCognition.activeDelusions.length > 0) {
+                // 正在誤解中 → 搖籃曲（自我欺騙的安撫）
+                MusicEngine.play('cradle', 0);
+            } else if (typeof acceptance !== 'undefined' && acceptance > 70) {
+                MusicEngine.play('an', 1);
+            } else if (typeof acceptance !== 'undefined' && acceptance < 40) {
+                MusicEngine.play('waltz', 1);
+            } else {
+                MusicEngine.play('an', 0);
+            }
+        }
+
+        const playerCognition = {
+            discoveredFragments: {}, completedCombos: new Set(), collectedPoemFragments: new Set(),
+            fakeRewardCooldown: false, trustLevel: 1.0, memoryDecayCounter: 0, activeDelusions: []
+        };
+
+        // --- 情感核心系統（新增全域變數）
+        // 情感核心數值（隱藏，不顯示 UI）
+        let acceptance = 50; // 0~100，起始中立，>70 偏向接受，<40 偏向封閉
+
+        // 線索鎖死記錄：當玩家過度咳血在誤解物件上，永久禁止該線索的正確版本
+        const lockedClues = new Set();
+
+        // 矛盾狀態計數：用於觸發特別事件
+        let contradictionLevel = 0;
+
+        // 連續咳血計數（用於冷靜期）
+        let consecutiveCough = 0;
+        let coughLockedUntil = 0; // 時間戳，在此之前無法咳嗽
+        let lastCoughTime = 0; // 上次咳嗽的時間（ms）
+
+        // 視角靈敏度預設（若為 null，開場會提示玩家選擇）
+        const sensitivityOptions = { low: 0.04, medium: 0.12, high: 0.24 };
+        let mouseSensitivityPreset = null; // 'low'|'medium'|'high' 或 null 未選
+
+        // 記憶夢境觸發標記
+        let dreamPhase = false;
+        let dreamSceneGroup = null;
+        let dreamAnimInterval = null;
+        // 鏡子顯示與凝視計時
+        let mirrorPlane = null;
+        let mirrorPlaneMat = null;
+        let mirrorGazeTimer = 0;
+        const MIRROR_FADE_SPEED = 0.6; // multiplier for fade-in speed
+        const dailyTasks = {
+            1: { diary: "日記：今天風太大，先把窗簾拉好。", objective: "小任務：看向窗簾後按 E 拉上窗簾。", target: 'curtain', actionText: '拉上窗簾' },
+            2: { diary: "日記：睡前確認窗戶是否關好。", objective: "小任務：看向窗戶後按 E 檢查窗戶。", target: 'window', actionText: '檢查窗戶' },
+            3: { diary: "日記：地上的痕跡還在。", objective: "小任務：看向腳印後按 E 清理腳印。", target: 'footprints', actionText: '清理腳印' },
+            4: { diary: "日記：鏡子又起霧了。", objective: "小任務：看向鏡子後按 E 擦拭鏡面。", target: 'mirror', actionText: '擦拭鏡面' },
+            5: { diary: "日記：日期混亂了，要重新確認。", objective: "小任務：看向日曆後按 E 劃記今天。", target: 'calendar', actionText: '劃記日曆' },
+            6: { diary: "日記：牆上的字又浮出來了。", objective: "小任務：看向牆面後按 E 抄下文字。", target: 'wall', actionText: '抄下牆字' },
+            7: { diary: "日記：花瓶裡的枝條需要整理。", objective: "小任務：看向花瓶後按 E 整理花枝。", target: 'vase', actionText: '整理花枝' }
+        };
+        let currentDailyTask = null;
+        // 調整參數（可由開發面板調整）
+        let contradictionProbability = 0.003; // 每幀觸發矛盾的基礎機率（小值，乘以 dt 可改成時間基）
+        let acceptanceDecreaseOnCough = 8;
+        let acceptancePenaltyConsecutive = 15;
+        let acceptanceGazeRate = 0.5; // acceptance 每秒增加量（當凝視已解鎖全部片段）
+        let acceptanceGainOnRead = 8;
+        let acceptancePenaltyOnCoughDay = 5;
+        let dreamDuration = 10000; // ms
+
+        // 開發者面板
+        let devPanel = null;
+        function createDevPanel() {
+            devPanel = document.createElement('div'); devPanel.id = 'dev-panel';
+            devPanel.style.position = 'fixed'; devPanel.style.right = '10px'; devPanel.style.top = '10px'; devPanel.style.width = '320px'; devPanel.style.maxHeight = '70vh'; devPanel.style.overflow = 'auto'; devPanel.style.background = 'rgba(20,20,20,0.9)'; devPanel.style.color = '#fff'; devPanel.style.padding = '8px'; devPanel.style.fontSize = '14px'; devPanel.style.zIndex = 9999; devPanel.style.border = '1px solid rgba(255,255,255,0.06)';
+            document.body.appendChild(devPanel);
+            const html = [];
+            html.push('<div style="font-weight:bold;margin-bottom:6px">Dev Panel (F3)</div>');
+            html.push('<div>acceptance: <span id="dp-accept">'+acceptance.toFixed(1)+'</span></div>');
+            html.push('<div>contradictionLevel: <span id="dp-contrad">'+contradictionLevel+'</span></div>');
+            html.push('<div>lockedClues: <span id="dp-locked">'+Array.from(lockedClues).join(',')+'</span></div>');
+            html.push('<div style="margin-top:6px">contradictionProbability: <input id="dp-contrProb" type="range" min="0" max="1" step="0.01" value="'+contradictionProbability+'"/></div>');
+            html.push('<div>acceptanceGainOnRead: <input id="dp-gainRead" type="number" step="0.5" value="'+acceptanceGainOnRead+'"/></div>');
+            html.push('<div>acceptanceDecreaseOnCough: <input id="dp-decCough" type="number" step="0.5" value="'+acceptanceDecreaseOnCough+'"/></div>');
+            html.push('<div>dreamDuration (ms): <input id="dp-dreamDur" type="number" step="250" value="'+dreamDuration+'"/></div>');
+            html.push('<div style="margin-top:6px"><button id="dp-close">Close</button></div>');
+            devPanel.innerHTML = html.join('');
+            document.getElementById('dp-close').addEventListener('click', () => devPanel.style.display = 'none');
+            document.getElementById('dp-contrProb').addEventListener('input', (e) => { contradictionProbability = parseFloat(e.target.value); });
+            document.getElementById('dp-gainRead').addEventListener('change', (e) => { acceptanceGainOnRead = parseFloat(e.target.value); });
+            document.getElementById('dp-decCough').addEventListener('change', (e) => { acceptanceDecreaseOnCough = parseFloat(e.target.value); });
+            document.getElementById('dp-dreamDur').addEventListener('change', (e) => { dreamDuration = parseInt(e.target.value); });
+        }
+        function updateDevPanel() {
+            if (!devPanel) return;
+            const a = document.getElementById('dp-accept'); if (a) a.textContent = acceptance.toFixed(1);
+            const c = document.getElementById('dp-contrad'); if (c) c.textContent = contradictionLevel;
+            const l = document.getElementById('dp-locked'); if (l) l.textContent = Array.from(lockedClues).join(',');
+        }
+
+        const letterTemplates = [
+            { day: 1, sender: "安", segments: [{ type: "greeting", text: "聽說妳又咳了。" }, { type: "body", text: "我寄了妳喜歡的茶。" }, { type: "body", text: "要喝。" }, { type: "closing", text: "要快點好起來。" }, { type: "ps", text: "房間的窗簾要拉開。我等妳。" }] },
+            { day: 2, sender: "安", segments: [{ type: "greeting", text: "茶收到了嗎？" }, { type: "body", text: "我今天經過妳樓下，窗戶是暗的。" }, { type: "body", text: "妳在睡嗎？" }, { type: "body", text: "醒著的話回我訊息。" }, { type: "closing", text: "任何一個字都好。" }] },
+            { day: 3, sender: "安", segments: [{ type: "greeting", text: "妳還是沒有回。" }, { type: "body", text: "沒關係。我習慣了。" }, { type: "body", text: "我今天在樓下站了一會兒，妳的窗簾還是拉上的。" }, { type: "closing", text: "我只是想讓妳知道，有人在外面。" }] },
+            { day: 4, sender: "安", segments: [{ type: "greeting", text: "今天我沒有去。" }, { type: "body", text: "我開始想，妳是不是真的希望我不要再出現了。" }, { type: "body", text: "如果是，妳可以告訴我。" }, { type: "closing", text: "我只是想聽妳自己說。" }] },
+            { day: 5, sender: "", segments: [{ type: "body", text: "（一片空白。信紙上只有一個模糊的紅色指紋。）" }] },
+            { day: 6, sender: "醫院", segments: [{ type: "greeting", text: "敬啟者：" }, { type: "body", text: "您的醫療費用已逾期。" }, { type: "body", text: "請於三日內繳清。" }, { type: "closing", text: "本院保留法律追訴權。" }] },
+            { day: 7, sender: "安", segments: [{ type: "greeting", text: "我昨天夢見妳。" }, { type: "body", text: "妳站在一片紅色的花海裡，對我笑。" }, { type: "body", text: "我醒來哭了很久。" }, { type: "closing", text: "……妳還活著嗎？" }, { type: "ps", text: "如果妳還在，不用回我。我只是想讓妳知道，我夢過妳。" }] }
+        ];
+
+        const contaminationRules = [
+            { id: 'delusion_insert_ps', condition: (s) => s.activeDelusions.length > 0, apply: (segs) => [...segs, { type: 'ps_back', text: '（信紙背面有一行小字：『我明天會來。』）' }] },
+            { id: 'reckoning_word_swap', condition: (s) => s.hasAnyReckoningOccurred && currentDay > 2, apply: (segs) => { let rep=false; return segs.map(s => { if(!rep && s.text.includes('茶')){ rep=true; return {...s, text: s.text.replace('茶','藥')}; } return s; }); } },
+            { id: 'memory_decay', condition: (s) => s.memoryDecayCounter > 1, apply: (segs) => { if(segs.length <= 2) return segs; const idx = Math.floor(Math.random()*(segs.length-1))+1; return segs.filter((_,i)=>i!==idx); } },
+            // 動態安的情緒反應，根據 acceptance 附加短句
+            { id: 'an_reaction', condition: (s) => true, apply: (segs, s) => {
+                if (s && s.acceptance > 70) return [...segs, { type: 'ps', text: "（信紙角落有小小的笑臉符號）" }];
+                else if (s && s.acceptance < 40) return [...segs, { type: 'ps', text: "（背面隱約有擦掉的字跡：『妳為什麼不回答』）" }];
+                return segs;
+            } }
+        ];
+
+        class LetterInstance {
+            constructor(template, day) { this.template = template; this.day = day; this.appliedContaminations = []; this.lastReadSnapshot = null; this.readCount = 0; }
+            getCurrentSegments(state) {
+                let segs = JSON.parse(JSON.stringify(this.template.segments));
+                for(let rule of contaminationRules) { if(rule.condition(state) || this.appliedContaminations.includes(rule.id)) { segs = rule.apply(segs, state); if(!this.appliedContaminations.includes(rule.id)) this.appliedContaminations.push(rule.id); } }
+                return segs;
+            }
+        }
+
+        // 更新安的動態反應（基於 acceptance）
+        function updateAnReaction() {
+            const mirrorFig = interactableProps['mirror']?.mesh;
+            const footMesh = interactableProps['footprints']?.mesh;
+            const curtainMesh = interactableProps['curtain']?.mesh;
+
+            if (!mirrorFig || !footMesh || !curtainMesh) return;
+
+            if (acceptance > 70) {
+                mirrorFig.visible = true;
+                if (mirrorFig.material && mirrorFig.material.color) mirrorFig.material.color.setHex(0xffffff);
+            } else if (acceptance < 40) {
+                mirrorFig.visible = true;
+                if (mirrorFig.material && mirrorFig.material.color) mirrorFig.material.color.setHex(0x884444);
+                mirrorFig.rotation.y = Math.PI;
+            } else {
+                mirrorFig.visible = currentDay >= 4;
+            }
+
+            if (acceptance > 70 && currentDay >= 3) {
+                footMesh.visible = true;
+            } else if (acceptance < 30) {
+                footMesh.visible = false;
+            }
+
+            if (acceptance > 70) {
+                curtainMesh.position.z = 20.5;
+            } else if (acceptance < 40) {
+                curtainMesh.position.z = 19.2;
+            }
+        }
+
+        function startDreamScene(duration = 10000, cb = null) {
+            if (!scene || dreamPhase) return;
+            dreamPhase = true; const prevState = gameState; gameState = 'DREAM';
+            updateMusicForState();
+            // create group
+            dreamSceneGroup = new THREE.Group();
+            const mat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.0 });
+            const box = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(12, 8, 0.1)), mat);
+            box.position.set(camera.position.x, camera.position.y, camera.position.z - 6);
+            dreamSceneGroup.add(box);
+            // silhouette arc
+            const curvePts = [];
+            for (let i = 0; i <= 40; i++) { const a = Math.PI * (i/40 - 0.5); curvePts.push(new THREE.Vector3(camera.position.x + Math.sin(a)*1.6, camera.position.y + Math.cos(a)*2.0 - 0.6, camera.position.z - 5.8)); }
+            const silMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.0 });
+            const sil = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curvePts), silMat);
+            dreamSceneGroup.add(sil);
+
+            // add subtle particles (small points)
+            const pts = new Float32Array(60 * 3);
+            for (let i = 0; i < 60; i++) { pts[i*3] = camera.position.x + (Math.random()-0.5)*2; pts[i*3+1] = camera.position.y + (Math.random()-0.5)*2; pts[i*3+2] = camera.position.z - 5 - Math.random()*1.5; }
+            const pG = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pts, 3)), new THREE.PointsMaterial({ color: 0xffffff, size: 0.06, transparent: true, opacity: 0.0 }));
+            dreamSceneGroup.add(pG);
+            scene.add(dreamSceneGroup);
+
+            // overlay DOM 白色模糊遮罩
+            let overlay = document.getElementById('dream-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div'); overlay.id = 'dream-overlay';
+                overlay.style.position = 'fixed'; overlay.style.left = '0'; overlay.style.top = '0'; overlay.style.width = '100%'; overlay.style.height = '100%';
+                overlay.style.background = 'rgba(255,255,255,0)'; overlay.style.pointerEvents = 'none'; overlay.style.transition = 'background 0.6s ease'; overlay.style.backdropFilter = 'blur(0px)';
+                document.body.appendChild(overlay);
+            }
+
+            // audio cue
+            if (typeof AudioEngine !== 'undefined' && AudioEngine.playBreath) AudioEngine.playBreath();
+
+            // animate opacity over duration
+            const start = Date.now();
+            dreamAnimInterval = setInterval(() => {
+                const now = Date.now(); const p = Math.min(1, (now - start) / duration);
+                const o = 0.6 * Math.sin(p * Math.PI); // ease-in-out pulse
+                mat.opacity = o; silMat.opacity = 0.9 * p; pG.material.opacity = 0.6 * p;
+                if (overlay) { overlay.style.background = `rgba(255,255,255,${o*0.8})`; overlay.style.backdropFilter = `blur(${Math.round(6 * p)}px)`; }
+            }, 60);
+
+            showEphemeralText('（妳跌入一個白色的記憶框）');
+
+            setTimeout(() => {
+                // end dream
+                if (dreamAnimInterval) { clearInterval(dreamAnimInterval); dreamAnimInterval = null; }
+                if (dreamSceneGroup) { scene.remove(dreamSceneGroup); dreamSceneGroup = null; }
+                if (overlay) { overlay.style.background = 'rgba(255,255,255,0)'; overlay.style.backdropFilter = 'blur(0px)'; setTimeout(() => { overlay.remove(); }, 600); }
+                dreamPhase = false; gameState = prevState === 'SLEEPING' ? 'SLEEPING' : 'AWAKE';
+                updateMusicForState();
+                contradictionLevel = Math.max(0, contradictionLevel - 1);
+                if (typeof AudioEngine !== 'undefined' && AudioEngine.playChoke) AudioEngine.playChoke();
+                if (cb) cb();
+            }, duration);
+        }
+        let letterInstances = letterTemplates.map(t => new LetterInstance(t, t.day));
+
+        const emotionalClues = {
+            vase: {
+                target: 'vase', day: 1,
+                fragments: [
+                    { text: "她說：『要喝。』", tag: "care", ambiguity: "她看著茶，還是看著妳？" },
+                    { text: "語氣裡多了一個句點。", tag: "distance", ambiguity: "她在等妳的回答。" },
+                    { text: "妳沒有接。杯緣的水珠滑下來。", tag: "silence", ambiguity: "沉默也是一種回答。" }
+                ],
+                delusionFragments: [
+                    { text: "它在幫妳數花苞。", tag: "delusion" },
+                    { text: "快滿一束了。", tag: "delusion" },
+                    { text: "它想聽妳說話。", tag: "delusion" }
+                ],
+                isActive: false, delusionCount: 0, hasReckoned: false, fakeClue: { type: 'glow', instance: null },
+                inspectProgress: 0, THRESH: 2.5, currentFragment: 0, delusionIndex: 0
+            },
+            curtain: {
+                target: 'curtain', day: 2,
+                fragments: [
+                    { text: "她拉開窗簾的時候，看了一眼床的方向。", tag: "presence" },
+                    { text: "光停在妳腳邊，沒有往前。", tag: "boundary" },
+                    { text: "她站在那裡很久，久到影子變長了。", tag: "waiting" }
+                ],
+                delusionFragments: [
+                    { text: "安站在那裡。", tag: "delusion" },
+                    { text: "她不敢敲門，怕妳已經變成花。", tag: "delusion" },
+                    { text: "她一直在看著妳。", tag: "delusion" }
+                ],
+                isActive: false, delusionCount: 0, hasReckoned: false, fakeClue: { type: 'shadow', instance: null },
+                inspectProgress: 0, THRESH: 2.5, currentFragment: 0, delusionIndex: 0
+            },
+            footprints: {
+                target: 'footprints', day: 3,
+                fragments: [
+                    { text: "足印從門口到床邊，又折返回門口。", tag: "hesitation" },
+                    { text: "腳尖的方向對著妳，腳跟卻向後退。", tag: "ambivalence" },
+                    { text: "她來過不只一次。", tag: "persistence" }
+                ],
+                delusionFragments: [
+                    { text: "她來看過妳了。", tag: "delusion" },
+                    { text: "她說：『再睡一下吧，我會等。』", tag: "delusion" },
+                    { text: "是妳一直在等的那個人。", tag: "delusion" }
+                ],
+                isActive: false, delusionCount: 0, hasReckoned: false, fakeClue: { type: 'coat', instance: null },
+                inspectProgress: 0, THRESH: 2.5, currentFragment: 0, delusionIndex: 0
+            },
+            mirror: {
+                target: 'mirror', day: 4,
+                fragments: [
+                    { text: "鏡子裡的人，穿的不是今天的衣服。", tag: "memory" },
+                    { text: "她抿嘴的時候，妳才發現那是安。", tag: "recognition" },
+                    { text: "安在鏡子裡哭了。但妳聽不見。", tag: "unreachable" }
+                ],
+                delusionFragments: [
+                    { text: "她對妳笑了。", tag: "delusion" },
+                    { text: "妳終於有機會對自己好一點。", tag: "delusion" },
+                    { text: "我在她安靜時旁觀。", tag: "delusion" }
+                ],
+                isActive: false, delusionCount: 0, hasReckoned: false, fakeClue: { type: 'smile', instance: null },
+                inspectProgress: 0, THRESH: 2.5, currentFragment: 0, delusionIndex: 0
+            },
+            calendar: {
+                target: 'calendar', day: 5,
+                fragments: [
+                    { text: "今天的日期被紅圈標起，旁邊寫著很小的字：『復診』。", tag: "care" },
+                    { text: "那不是妳的字跡。", tag: "other" },
+                    { text: "日曆上還有更早的圈，妳完全沒印象。", tag: "forgetting" }
+                ],
+                delusionFragments: [
+                    { text: "安圈起來的。", tag: "delusion" },
+                    { text: "她說：『剩三天，我來接妳出院。』", tag: "delusion" },
+                    { text: "再三天就自由了。", tag: "delusion" }
+                ],
+                isActive: false, delusionCount: 0, hasReckoned: false, fakeClue: { type: 'mark', instance: null },
+                inspectProgress: 0, THRESH: 2.5, currentFragment: 0, delusionIndex: 0
+            },
+            wall: {
+                target: 'wall', day: 6,
+                fragments: [
+                    { text: "牆上的字：『妳會好起來的。』", tag: "hope" },
+                    { text: "筆跡斷斷續續，像是在忍著什麼。", tag: "suppression" },
+                    { text: "署名：安。日期是昨天。", tag: "evidence" }
+                ],
+                delusionFragments: [
+                    { text: "『我們收到了。會來看妳。』", tag: "delusion" },
+                    { text: "下面的署名是安。", tag: "delusion" },
+                    { text: "她們說很快就來接妳。", tag: "delusion" }
+                ],
+                isActive: false, delusionCount: 0, hasReckoned: false, fakeClue: { type: 'reply', instance: null },
+                inspectProgress: 0, THRESH: 2.5, currentFragment: 0, delusionIndex: 0
+            },
+            flower: {
+                target: 'flower', day: 7,
+                fragments: [
+                    { text: "花瓶裡的花不是買的，是從樓下摘的。", tag: "gesture" },
+                    { text: "花瓣邊緣開始捲曲，沒有換水。", tag: "neglect" },
+                    { text: "花還在開。在等誰？", tag: "waiting" }
+                ],
+                delusionFragments: [
+                    { text: "它是為妳開的。", tag: "delusion" },
+                    { text: "吃下去。", tag: "delusion" },
+                    { text: "妳就能聽見她們說話了。", tag: "delusion" }
+                ],
+                isActive: false, delusionCount: 0, hasReckoned: false, fakeClue: { type: 'bloom', instance: null },
+                inspectProgress: 0, THRESH: 2.5, currentFragment: 0, delusionIndex: 0
+            }
+        };
+
+        const reckoningMessages = [
+            "狀態不確定。\n感測器回傳衝突訊號。",
+            "妳相信的版本和房間記錄的不一致。\n建議重置今日認知。\n是否保留？\n（妳沒有選擇權。）",
+            "（錯誤。無法寫入記憶。）",
+            "有人在看著妳讀這段文字。"
+        ];
+
+        function showEphemeralText(msg) {
+            const el = document.getElementById('ephemeral-text'); el.innerText = msg; el.style.opacity = '1';
+            setTimeout(() => el.style.opacity = '0', 3000);
+        }
+
+        function generateFakeClue(clue) {
+            const glowMat = new THREE.LineBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.6 });
+            let mesh = null;
+            
+            switch(clue.fakeClue?.type) {
+                case 'coat':
+                    mesh = new THREE.LineSegments(
+                        new THREE.EdgesGeometry(new THREE.BoxGeometry(2, 3, 0.5)), 
+                        glowMat
+                    );
+                    mesh.position.set(4, -6.5, -2);
+                    break;
+                case 'smile':
+                    const curve = new THREE.QuadraticBezierCurve3(
+                        new THREE.Vector3(-0.5, 2, 0.6),
+                        new THREE.Vector3(0, 1.5, 0.6),
+                        new THREE.Vector3(0.5, 2, 0.6)
+                    );
+                    mesh = new THREE.Line(
+                        new THREE.BufferGeometry().setFromPoints(curve.getPoints(10)), 
+                        glowMat
+                    );
+                    interactableProps['mirror']?.mesh.add(mesh);
+                    break;
+                default:
+                    mesh = new THREE.LineSegments(
+                        new THREE.EdgesGeometry(new THREE.BoxGeometry(1.5, 1.5, 1.5)), 
+                        glowMat
+                    );
+                    mesh.position.copy(interactableProps[clue.target]?.mesh?.position || new THREE.Vector3());
+            }
+            
+            if (mesh && clue.fakeClue?.type !== 'smile') scene.add(mesh);
+            clue.fakeClue.instance = mesh;
+        }
+
+        function showFakeSuccess(msg) {
+            const fakeDiv = document.createElement('div');
+            fakeDiv.style.position = 'absolute';
+            fakeDiv.style.bottom = '20%';
+            fakeDiv.style.width = '100%';
+            fakeDiv.style.textAlign = 'center';
+            fakeDiv.style.color = '#aa2222';
+            fakeDiv.style.fontSize = '1.2rem';
+            fakeDiv.style.letterSpacing = '4px';
+            fakeDiv.style.textShadow = '0 0 8px red';
+            fakeDiv.style.zIndex = '100';
+            fakeDiv.style.pointerEvents = 'none';
+            fakeDiv.innerText = msg;
+            document.body.appendChild(fakeDiv);
+            
+            const btn = document.getElementById('cough-btn');
+            const origText = btn.innerText;
+            const origColor = btn.style.color;
+            const origBorder = btn.style.borderColor;
+            btn.innerText = '痊 癒';
+            btn.style.color = '#aaffaa';
+            btn.style.borderColor = '#aaffaa';
+            
+            setTimeout(() => {
+                fakeDiv.remove();
+                btn.innerText = origText;
+                btn.style.color = origColor;
+                btn.style.borderColor = origBorder;
+            }, 3000);
+            
+            unlockPoemFragment('P18');
+        }
+
+        function triggerUncertainty(clue) {
+            document.getElementById('canvas-container').classList.add('ghost-room-effect');
+            setTimeout(() => document.getElementById('canvas-container').classList.remove('ghost-room-effect'), 1000);
+
+            clue.isActive = false;
+            clue.delusionCount = 0;
+            clue.hasReckoned = true;
+            hasAnyReckoningOccurred = true;
+            
+            playerCognition.activeDelusions = playerCognition.activeDelusions.filter(id => id !== clue.target);
+            
+            if (clue.fakeClue?.instance) {
+                scene.remove(clue.fakeClue.instance);
+                clue.fakeClue.instance = null;
+            }
+
+            const reckonText = document.getElementById('reckoning-text');
+            reckonText.innerText = reckoningMessages[Math.floor(Math.random() * reckoningMessages.length)];
+            reckonText.style.opacity = '1';
+            setTimeout(() => { reckonText.style.opacity = '0'; }, 3500);
+            
+            AudioEngine.playTapeWobble();
+            AudioEngine.playChoke();
+            
+            playerShadow.scale.set(3, 3, 3);
+            playerShadow.material.opacity = 1.0;
+            setTimeout(() => {
+                playerShadow.scale.set(1, 1, 1);
+                playerShadow.material.opacity = 0.15 + (currentDay * 0.05);
+            }, 800);
+            
+            unlockPoemFragment('P23');
+        }
+
+        function unlockPoemFragment(id) {
+            if(!playerCognition.collectedPoemFragments.has(id)) {
+                playerCognition.collectedPoemFragments.add(id);
+                showEphemeralText("……");
+                
+                const counter = document.getElementById('fragment-counter');
+                counter.innerText = `<記憶碎片：${playerCognition.collectedPoemFragments.size}/26>`;
+                counter.style.opacity = '1';
+                setTimeout(() => counter.style.opacity = '0.3', 2500);
+            }
+        }
+
+        function generateEnding() {
+            // 根據 acceptance 決定基調
+            let tone = '';
+            if (acceptance >= 70) tone = 'reconciliation';
+            else if (acceptance >= 40) tone = 'missed';
+            else tone = 'isolation';
+
+            // 收集玩家解鎖過的情感標籤
+            let tags = new Set();
+            for (let key in emotionalClues) {
+                let clue = emotionalClues[key];
+                for (let i = 0; i < clue.currentFragment; i++) {
+                    tags.add(clue.fragments[i].tag);
+                }
+            }
+
+            let opening = {
+                reconciliation: "那朵紅花開了。這一次，我沒有轉開視線。",
+                missed: "花開的時候，我剛好閉上眼睛。",
+                isolation: "花是開了，但在很深很深的地方，我看不見。"
+            }[tone];
+
+            let body = '';
+            if (tags.has('care') && tags.has('waiting')) {
+                body += "原來她一直等在那裡，用我忽略的方式。\n";
+            } else if (tags.has('distance')) {
+                body += "我們的距離，是我親手量的。\n";
+            }
+            if (tags.has('silence')) body += "沉默不是沒有話說，是太多話，不知道怎麼給。\n";
+            if (tags.has('unreachable')) body += "鏡子裡的人哭了，但我的手指穿不過那層玻璃。\n";
+            if (playerCognition.collectedPoemFragments.has('P13')) body += "失語者，不是不會說話，是不會接受。\n";
+
+            let closing = {
+                reconciliation: "「安。」我終於說出口。",
+                missed: "如果再早一點……不，沒有如果。",
+                isolation: "房間還是房間，只有紅花知道。"
+            }[tone];
+
+            let secret = '';
+            if (playerCognition.collectedPoemFragments.size >= 12) secret = "那些未曾寄出的回信，拼成了形狀。";
+
+            return { main: opening + "\n\n" + body + "\n" + closing, secret };
+        }
+
+            // 長詩（當玩家收集完所有記憶碎片後解鎖）
+            const longPoemText = `原來過了那麼久，我寫下這麼多段記錄，
+        直到現在，才讀懂自己究竟缺失的是什麼。
+
+        不是語言。
+
+        是「被愛」的能力。
+
+        我學會了怎麼去愛人——
+        學會陪伴、學會回應、學會在她看向光的時候，替她記住影子的方向。
+        我甚至學會在她笑的時候，替她把笑聲分類、收藏。
+
+        但我從來沒有相信過——
+        那些情感，會落在我身上。
+
+        我一直覺得，她所看見的，不是我。
+        就像我始終不相信，那些文字真的屬於我一樣。
+
+        所以我愛人，其實不是愛。
+        那只是「安排」。
+        是我以為自己在付出，其實是在控制。
+
+        ——讓一切留在我能理解的範圍內。
+
+        直到我翻開那些舊紀錄，
+        才發現我從來沒有想過——
+
+        如果她說：「親愛的。」
+        我該怎麼回應？
+
+        如果她說：「今天的妳，有點不一樣。」
+        我是否有勇氣相信，那是真的？
+
+        我沒有。
+
+        我甚至沒有接受「改變」的能力。
+
+        我只會把一切量化、拆解、忙碌，
+        用數值與流程去掩蓋一件事——
+
+        我其實不想理解。
+
+        我只是想讓痛苦消失，
+        而不是知道它從哪裡來。
+
+        我總是這樣告訴自己——
+        「她不懂我。」
+        「我一個人會過得更好。」
+
+        於是我忘記了：
+
+        我很懷念。
+        我很期待。
+        我其實，很想要。
+
+        我變成了一個失語者。
+
+        不是說不出話，
+        而是不會接受。
+
+        不會沉默。
+        不會陪伴。
+
+        我以為自己聽懂了很多，
+        但我只是在她安靜時旁觀。
+
+        而不是在她崩潰的時候，留下來。
+
+        ——現在想起來，好像有點晚了。
+
+        但還不至於結束。
+
+        既然我已經說出口了，
+        那我至少應該，試著把接下來的人生走好。
+
+        至於妳——
+
+        我知道妳會變得越來越安靜。
+        直到某一天，把那些情感，交給別人保管。
+
+        我也知道，妳會回到那個世界裡，
+        在那些虛構之中，尋找屬於自己的溫柔。
+
+        但我不會再停在那裡了。
+
+        這一次，我準備離開。
+
+        不是逃，而是出發。
+
+        我會看看前方有多難。
+        妳也要，好好照顧自己。
+
+        ——雖然我知道，我說什麼其實都沒有用了。
+
+        因為對我來說，
+        「被愛」這件事，本來就像錯覺。
+
+        就像那些溫柔——
+        總是被我收進心裡，
+        然後，沒有留下任何痕跡。
+
+        今天的光很亮。
+
+        亮到像是，
+        終於願意讀懂一篇，早就該理解的詩。
+
+        所以——
+
+        祝妳快樂。
+
+        就算妳沒有看到這段，也一樣。
+
+        我要去學會，在失語之中，被愛。
+
+        這一次，不再停留。
+
+        ——
+
+        那天的風，其實沒有名字。
+
+        我也沒有真正記住它的方向。
+
+        但我記得妳的呼吸。
+
+        在妳睡著之後，
+        規律而緩慢。
+
+        我在那之後，沒有離開。
+
+        只是等。
+
+        等到時間變得沒有意義。
+
+        兩個小時，還是三個小時，
+        我已經分不清了。
+
+        最後，我很輕地說了一句——
+
+        「再會。」
+
+        不知道妳有沒有聽見。
+
+        有也好。
+        沒有也罷。
+
+        那就當作——
+
+        那是我這一生裡，
+        最接近「被允許存在」的一次守候。`;
+
+        // 記憶碎片詳情（用於畫廊展示）
+        const fragmentDetails = [
+            { id: 'P01', text: "缺失的不是語言。" },
+            { id: 'P02', text: "我學會陪伴，學會回應。" },
+            { id: 'P03', text: "我從不相信情感會落在我身上。" },
+            { id: 'P04', text: "她看見的不是我。" },
+            { id: 'P05', text: "愛是安排，不是愛。" },
+            { id: 'P06', text: "如果她說『親愛的』，我該怎麼回應？" },
+            { id: 'P07', text: "『今天妳不一樣』是真的嗎？" },
+            { id: 'P08', text: "我沒有接受改變的能力。" },
+            { id: 'P09', text: "我用忙碌掩蓋不想理解。" },
+            { id: 'P10', text: "讓痛苦消失，不必知道來處。" },
+            { id: 'P11', text: "她不懂我。我一個人更好。" },
+            { id: 'P12', text: "我很懷念。我很期待。很想要。" },
+            { id: 'P13', text: "失語者：不會接受。" },
+            { id: 'P14', text: "不會沉默，不會陪伴。" },
+            { id: 'P15', text: "我在她安靜時旁觀。" },
+            { id: 'P16', text: "沒有在她崩潰時留下來。" },
+            { id: 'P17', text: "有點晚了，但還沒結束。" },
+            { id: 'P18', text: "說出口了，就要走好。" },
+            { id: 'P19', text: "妳會越來越安靜，情感交給別人。" },
+            { id: 'P20', text: "在虛構中尋找溫柔。" },
+            { id: 'P21', text: "不是逃，是出發。" },
+            { id: 'P22', text: "前方很難。照顧自己。" },
+            { id: 'P23', text: "被愛像錯覺。" },
+            { id: 'P24', text: "光很亮，終於讀懂。祝妳快樂。" },
+            { id: 'P25', text: "風沒有名字，我記得妳的呼吸。" },
+            { id: 'P26', text: "『再會。』聽見也好，沒有也罷。" }
+        ];
+
+        const introScreen = document.getElementById('intro-screen'), envelopeCanvas = document.getElementById('envelope-canvas'), envCtx = envelopeCanvas.getContext('2d');
+        let introAnimFrame, introTypingLine = 0, introTypingChar = 0, isIntroTyping = true;
+        const introLines = ["今天咳出了第三朵花。", "她們說那是血。", "我只看見紅色的朱槿。", "……", "我不會說話。", "但房間記得每一個字。"];
+        
+        function drawEnvelope(cx, cy, w, h, time) {
+            envCtx.clearRect(0, 0, envelopeCanvas.width, envelopeCanvas.height); const rx = Math.sin(time*0.3)*0.05, ry = Math.cos(time*0.4)*0.05;
+            envCtx.save(); envCtx.translate(cx, cy); envCtx.rotate(rx); envCtx.scale(1+ry*0.2, 1+ry*0.1);
+            envCtx.strokeStyle=`rgba(255,255,255,${0.4+Math.sin(time)*0.1})`; envCtx.lineWidth=2; envCtx.strokeRect(-w/2,-h/2,w,h);
+            envCtx.beginPath(); envCtx.moveTo(-w/2,-h/2); envCtx.lineTo(0,0); envCtx.lineTo(w/2,-h/2); envCtx.strokeStyle=`rgba(255,255,255,0.2)`; envCtx.stroke();
+            envCtx.beginPath(); envCtx.moveTo(-w/2,-h/2); envCtx.lineTo(0,0); envCtx.lineTo(-w/2,h/2); envCtx.stroke(); envCtx.beginPath(); envCtx.moveTo(-w/2,h/2); envCtx.lineTo(0,0); envCtx.lineTo(w/2,h/2); envCtx.stroke();
+            const waxR = 8+Math.sin(time*5)*1.5, grad = envCtx.createRadialGradient(-2,-2,1,0,0,waxR*1.5);
+            grad.addColorStop(0,`rgba(220,20,20,${0.8+Math.sin(time*6)*0.2})`); grad.addColorStop(1,`rgba(100,0,0,0.2)`);
+            envCtx.beginPath(); envCtx.arc(0,0,waxR,0,2*Math.PI); envCtx.fillStyle=grad; envCtx.shadowColor='rgba(255,0,0,0.8)'; envCtx.shadowBlur=10+Math.sin(time*5)*5; envCtx.fill(); envCtx.shadowBlur=0; envCtx.strokeStyle='rgba(255,255,255,0.8)'; envCtx.lineWidth=1; envCtx.stroke();
+            envCtx.restore();
+        }
+        function animateEnvelope(ts) {
+            if(introScreen.style.visibility !== 'hidden'){
+                const dpr=window.devicePixelRatio||1, rect=envelopeCanvas.getBoundingClientRect(); envelopeCanvas.width=rect.width*dpr; envelopeCanvas.height=rect.height*dpr; envCtx.scale(dpr,dpr);
+                drawEnvelope(rect.width/2, rect.height/2, rect.width*0.7, rect.height*0.6, ts/1000); introAnimFrame=requestAnimationFrame(animateEnvelope);
+            }
+        }
+        function typeIntro() {
+            if(!isIntroTyping) return;
+            if(introTypingChar < introLines[introTypingLine].length) { document.getElementById('typewriter-text').textContent += introLines[introTypingLine][introTypingChar++]; setTimeout(typeIntro, 80+Math.random()*50); }
+            else if(introTypingLine < introLines.length-1) { setTimeout(()=>{document.getElementById('typewriter-text').textContent+='\n'; introTypingLine++; introTypingChar=0; typeIntro();}, 800); }
+            else { isIntroTyping=false; document.getElementById('intro-hint').style.opacity='1'; unlockPoemFragment('P13'); }
+        }
+
+        // 顯示靈敏度選擇面板（開始前）
+        function showSensitivitySelector() {
+            if (document.getElementById('sensitivity-selector')) return;
+            const overlay = document.createElement('div'); overlay.id = 'sensitivity-selector';
+            overlay.style.position = 'fixed'; overlay.style.left = '0'; overlay.style.top = '0'; overlay.style.width = '100%'; overlay.style.height = '100%';
+            overlay.style.background = 'rgba(0,0,0,0.85)'; overlay.style.zIndex = 300; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column';
+            overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
+
+            const title = document.createElement('div'); title.textContent = '選擇視角靈敏度'; title.style.color = '#fff'; title.style.fontSize = '1.4rem'; title.style.letterSpacing = '4px'; title.style.marginBottom = '30px';
+
+            const btnContainer = document.createElement('div'); btnContainer.style.display = 'flex'; btnContainer.style.gap = '20px';
+            ['low','medium','high'].forEach(level => {
+                const btn = document.createElement('button'); btn.textContent = level;
+                btn.style.padding = '12px 30px'; btn.style.fontSize = '1rem'; btn.style.background = '#220000'; btn.style.color = '#ffdddd'; btn.style.border = '1px solid #ff6666'; btn.style.cursor = 'pointer';
+                btn.addEventListener('click', () => {
+                    mouseSensitivityPreset = level;
+                    document.body.removeChild(overlay);
+                    // 繼續進入遊戲
+                    introScreen.style.opacity = '0';
+                    setTimeout(() => { introScreen.style.visibility = 'hidden'; cancelAnimationFrame(introAnimFrame); if (!scene) initGame(); }, 2000);
+                });
+                btnContainer.appendChild(btn);
+            });
+
+            overlay.appendChild(title); overlay.appendChild(btnContainer); document.body.appendChild(overlay);
+        }
+        introScreen.addEventListener('click', () => {
+            AudioEngine.init();
+            if(isIntroTyping){ isIntroTyping=false; document.getElementById('typewriter-text').textContent=introLines.join('\n'); document.getElementById('intro-hint').style.opacity='1'; unlockPoemFragment('P13'); }
+            else {
+                // 若靈敏度尚未選擇，顯示選擇面板；否則直接進入遊戲
+                if (!mouseSensitivityPreset) {
+                    showSensitivitySelector();
+                } else {
+                    introScreen.style.opacity='0'; setTimeout(()=>{ introScreen.style.visibility='hidden'; cancelAnimationFrame(introAnimFrame); if(!scene) initGame(); }, 2000);
+                }
+            }
+        });
+        window.onload = () => {
+            loadGameSettings();
+            applyGameSettings();
+            introAnimFrame=requestAnimationFrame(animateEnvelope);
+            setTimeout(typeIntro, 800);
+        };
+
+        let scene, camera, renderer, raycaster;
+        let gameState = 'INTRO'; 
+        let currentDay = 1, coughCountToday = 0, totalCoughCount = 0;
+        
+        let coughedObjects = new Set(), windowGazeCount = 0, doorGazeCount = 0, currentGazedObject = null;
+        let hasAnyReckoningOccurred = false, coughedAfterReckoning = false, isCollapsing = false, collapseTimer = 0;
+
+        let lon = 90, lat = 0, phi = 0, theta = 0, targetLon = 90, targetLat = 0;
+        let moveForward = 0, moveRight = 0, stationaryTimer = 0, breathPlayed = false;
+        const keys = { w:false, a:false, s:false, d:false };
+        
+        let leftTouchId = null, rightTouchId = null, rightTouchStartX=0, rightTouchStartY=0, leftTouchStartX=0, leftTouchStartY=0;
+
+        let bedHitbox, letterHitbox, windowHitbox, doorHitbox;
+        let roomLines = [], roomOrigVerts = [], bloodStrokes = [], interactableProps = {};
+        let corridorPreviewLines = [];
+        let solidColliders = [];
+        const PLAYER_COLLIDER_RADIUS = 0.7;
+        let playerShadow, ribsGroup; 
+        let shakeIntensity = 0, gazeTimer = 0, weaknessTimer = 0, letterReadTimer = 0;
+        // Final-stage variables for Day 7 ending sequence
+        let finalCoughActive = false;
+        let finalCoughInterval = null;
+        let finalSpeechStage = 0; // 0: waiting, 1: line1, 2: line2, 3: final red line
+        let finalCoughStartTime = 0;
+        const FINAL_COUGH_DURATION = 20000;
+        let finalBloodParticles = [];
+        let finalLine1El = null, finalLine2El = null, finalLine3El = null;
+        // Final image overlay state
+        let finalImageShown = false;
+        let finalImageElement = null;
+        
+        const bloodParticleMat = new THREE.PointsMaterial({ size: 0.8, map: new THREE.CanvasTexture((()=>{const c=document.createElement('canvas');c.width=16;c.height=16;const x=c.getContext('2d');x.strokeStyle='#ff2222';x.lineWidth=3;x.beginPath();x.moveTo(0,8);x.lineTo(16,8);x.moveTo(8,0);x.lineTo(8,16);x.stroke();return c;})()), transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+        const strokeMat = new THREE.LineBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.8 });
+
+        function registerSolidCollider(sizeX, sizeZ, centerX, centerZ, id, padding = 0.0) {
+            solidColliders.push({
+                id,
+                minX: centerX - sizeX / 2 - padding,
+                maxX: centerX + sizeX / 2 + padding,
+                minZ: centerZ - sizeZ / 2 - padding,
+                maxZ: centerZ + sizeZ / 2 + padding
+            });
+        }
+
+        function isPositionBlocked(x, z) {
+            for (const c of solidColliders) {
+                if (
+                    x > c.minX - PLAYER_COLLIDER_RADIUS &&
+                    x < c.maxX + PLAYER_COLLIDER_RADIUS &&
+                    z > c.minZ - PLAYER_COLLIDER_RADIUS &&
+                    z < c.maxZ + PLAYER_COLLIDER_RADIUS
+                ) return true;
+            }
+            return false;
+        }
+
+        function resolvePlayerColliderOverlap() {
+            if (!camera) return;
+            let x = camera.position.x;
+            let z = camera.position.z;
+
+            for (let pass = 0; pass < 3; pass++) {
+                let moved = false;
+                for (const c of solidColliders) {
+                    const minX = c.minX - PLAYER_COLLIDER_RADIUS;
+                    const maxX = c.maxX + PLAYER_COLLIDER_RADIUS;
+                    const minZ = c.minZ - PLAYER_COLLIDER_RADIUS;
+                    const maxZ = c.maxZ + PLAYER_COLLIDER_RADIUS;
+                    if (x > minX && x < maxX && z > minZ && z < maxZ) {
+                        const dLeft = Math.abs(x - minX);
+                        const dRight = Math.abs(maxX - x);
+                        const dBack = Math.abs(z - minZ);
+                        const dFront = Math.abs(maxZ - z);
+                        const m = Math.min(dLeft, dRight, dBack, dFront);
+                        const eps = 0.03;
+                        if (m === dLeft) x = minX - eps;
+                        else if (m === dRight) x = maxX + eps;
+                        else if (m === dBack) z = minZ - eps;
+                        else z = maxZ + eps;
+                        moved = true;
+                    }
+                }
+                if (!moved) break;
+            }
+
+            const bound = 18;
+            camera.position.x = Math.max(-bound, Math.min(bound, x));
+            camera.position.z = Math.max(-bound, Math.min(bound, z));
+        }
+
+        function updateCorridorVisibility() {
+            // 在房間深處先隱藏迴廊線段，避免穿透感
+            const shouldShow = camera && (camera.position.z > 15.5 || currentGazedObject === 'window');
+            corridorPreviewLines.forEach(line => { if (line) line.visible = shouldShow; });
+        }
+
+        function updateTaskPanel() {
+            const panel = document.getElementById('task-panel');
+            const dayEl = document.getElementById('task-day');
+            const diaryEl = document.getElementById('task-diary');
+            const objEl = document.getElementById('task-objective');
+            if (!panel || !dayEl || !diaryEl || !objEl) return;
+            if (!currentDailyTask) { panel.style.display = 'none'; return; }
+            panel.style.display = 'block';
+            dayEl.textContent = `Day ${currentDay} 任務清單`;
+            diaryEl.textContent = currentDailyTask.diary;
+            objEl.textContent = currentDailyTask.completed ? `完成：${currentDailyTask.actionText}\n下一步：去睡覺。` : currentDailyTask.objective;
+        }
+
+        function spawnCoughParticleBurst(count = 30, strength = 1.0) {
+            const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            const spawnPos = camera.position.clone().add(dir.multiplyScalar(2)); spawnPos.y -= 1.0;
+            const posArr = new Float32Array(count * 3), vels = [];
+            for (let i = 0; i < count; i++) {
+                posArr[i*3] = spawnPos.x; posArr[i*3+1] = spawnPos.y; posArr[i*3+2] = spawnPos.z;
+                vels.push(new THREE.Vector3(
+                    (Math.random()-0.5)*0.5*strength + dir.x*0.4*strength,
+                    (Math.random()-0.1)*0.3*strength,
+                    (Math.random()-0.5)*0.5*strength + dir.z*0.4*strength
+                ));
+            }
+            const pSys = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(posArr, 3)), bloodParticleMat);
+            scene.add(pSys);
+            activeBlood.push({ mesh: pSys, vels: vels, life: 100 });
+        }
+
+        function triggerTaskForcedCough() {
+            AudioEngine.playHumanCough(0.75);
+            shakeIntensity = Math.max(shakeIntensity, 1.0);
+            spawnCoughParticleBurst(24, 0.9);
+        }
+
+        function setupDailyTask(day) {
+            const base = dailyTasks[day];
+            currentDailyTask = base ? { ...base, completed: false } : null;
+            if (currentDailyTask?.target && interactableProps[currentDailyTask.target]?.mesh) {
+                interactableProps[currentDailyTask.target].mesh.visible = true;
+            }
+            updateTaskPanel();
+        }
+
+        function attemptTaskAction() {
+            if (gameState !== 'AWAKE' || !currentDailyTask || currentDailyTask.completed) return;
+            if (currentGazedObject !== currentDailyTask.target) {
+                showEphemeralText('請先看向今日任務目標，再按 E。');
+                return;
+            }
+            currentDailyTask.completed = true;
+            updateTaskPanel();
+            triggerTaskForcedCough();
+            showEphemeralText('小任務完成。妳被迫咳了一次，去睡覺。');
+        }
+
+        function initGame() {
+            loadGameSettings();
+            applyGameSettings();
+            scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000); scene.fog = new THREE.FogExp2(0x000000, 0.05);
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 100); camera.position.set(0, 0, 10);
+            raycaster = new THREE.Raycaster();
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            buildEnvironment(); setupControls();
+            initSettingsPanel();
+            const settingsBtn = document.getElementById('settings-btn');
+            if (settingsBtn) settingsBtn.style.display = 'block';
+            setupDailyTask(currentDay);
+            document.getElementById('cough-btn').addEventListener('click', () => triggerCough());
+            document.getElementById('letter-reading-screen').addEventListener('click', closeLetter);
+                    updateAnReaction();
+                    // 每幀更新開發面板
+                    if (devPanel) updateDevPanel();
+
+            document.getElementById('ui-layer').style.display = 'flex'; document.getElementById('reticle').style.display = 'block'; document.getElementById('desktop-hint').style.display = 'block';
+            gameState = 'AWAKE'; updateMusicForState(); animateGame();
+            setTimeout(() => showQuickTutorial(), 700);
+        }
+
+        function showQuickTutorial() {
+            let card = document.getElementById('tutorial-card');
+            if (!card) {
+                card = document.createElement('div');
+                card.id = 'tutorial-card';
+                document.body.appendChild(card);
+            }
+            card.innerHTML = `
+                【教學】<br>
+                1. 點擊畫面鎖定視角，WASD 移動。<br>
+                2. 凝視物件可讀取線索，中心圈滿會觸發。<br>
+                3. 空白鍵或按鈕咳嗽，會改變場景與敘事。<br>
+                4. 若想再看教學，按 H。
+            `;
+            card.classList.add('show');
+            clearTimeout(card._hideTimer);
+            card._hideTimer = setTimeout(() => card.classList.remove('show'), 10000);
+        }
+
+        function releasePointerLockForUI() {
+            if (document.pointerLockElement) document.exitPointerLock();
+        }
+
+        function buildEnvironment() {
+            const baseMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
+            const dimMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.08 });
+            
+            function addBox(w,h,d,x,y,z, mat=baseMat) { 
+                const m = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w,h,d)), mat); 
+                m.position.set(x,y,z); scene.add(m); roomLines.push(m); 
+                roomOrigVerts.push(Array.from(m.geometry.attributes.position.array));
+                return m; 
+            }
+
+            addBox(40,20,40, 0,0,0); addBox(34,18,34, 0,-1,0, dimMat);
+            const makePropHitbox = (w,h,d, obj, id) => { const hb=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshBasicMaterial({visible:false})); hb.position.copy(obj.position); scene.add(hb); hb.userData={id}; return hb; };
+
+            const corridorMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25 });
+            for(let i = 0; i < 5; i++) {
+                let scale = 1 - i * 0.12; let zPos = 22 + i * 6; let cw = 10 * scale, ch = 14 * scale;
+                let pts = [ new THREE.Vector3(-cw/2, -ch/2, zPos), new THREE.Vector3(cw/2, -ch/2, zPos), new THREE.Vector3(cw/2, ch/2, zPos), new THREE.Vector3(-cw/2, ch/2, zPos), new THREE.Vector3(-cw/2, -ch/2, zPos) ];
+                let line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), corridorMat);
+                scene.add(line); roomLines.push(line); roomOrigVerts.push(Array.from(line.geometry.attributes.position.array));
+                corridorPreviewLines.push(line);
+            }
+            // 走廊入口改為象徵牢籠的落地窗（窗框 + 窗格）
+            (function(){
+                const winW = 12, winH = 18, winY = -1, winZ = 20;
+                const frameMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+                const paneMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.12 });
+
+                const windowGroup = new THREE.Group(); windowGroup.position.set(0, winY, winZ);
+                const trackWindowLine = (line) => {
+                    windowGroup.add(line);
+                    roomLines.push(line);
+                    roomOrigVerts.push(Array.from(line.geometry.attributes.position.array));
+                };
+
+                // outer frame (relative coords)
+                const framePts = [ new THREE.Vector3(-winW/2, -winH/2, 0), new THREE.Vector3(winW/2, -winH/2, 0), new THREE.Vector3(winW/2, winH/2, 0), new THREE.Vector3(-winW/2, winH/2, 0), new THREE.Vector3(-winW/2, -winH/2, 0) ];
+                const frame = new THREE.Line(new THREE.BufferGeometry().setFromPoints(framePts), frameMat);
+                trackWindowLine(frame);
+
+                // vertical bars (strong, like籠罩)
+                for (let i = 0; i <= 4; i++) {
+                    const x = -winW/2 + i * (winW / 4);
+                    const vpts = [ new THREE.Vector3(x, -winH/2, 0), new THREE.Vector3(x, winH/2, 0) ];
+                    const vline = new THREE.Line(new THREE.BufferGeometry().setFromPoints(vpts), paneMat);
+                    trackWindowLine(vline);
+                }
+
+                // horizontal panes
+                for (let j = 1; j <= 3; j++) {
+                    const y = -winH/2 + j * (winH / 4);
+                    const hpts = [ new THREE.Vector3(-winW/2, y, 0), new THREE.Vector3(winW/2, y, 0) ];
+                    const hline = new THREE.Line(new THREE.BufferGeometry().setFromPoints(hpts), paneMat);
+                    trackWindowLine(hline);
+                }
+
+                // subtle cross-hatch (diagonal suggestion) for more '牢籠'感
+                const diagMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.06 });
+                const d1 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([ new THREE.Vector3(-winW/2, -winH/2, 0), new THREE.Vector3(winW/2, winH/2, 0) ]), diagMat);
+                const d2 = new THREE.Line(new THREE.BufferGeometry().setFromPoints([ new THREE.Vector3(winW/2, -winH/2, 0), new THREE.Vector3(-winW/2, winH/2, 0) ]), diagMat);
+                trackWindowLine(d1); trackWindowLine(d2);
+
+                scene.add(windowGroup);
+
+                // hitbox so it can be gazed at like其她互動物件（使用 id 'window' 以重用檢視邏輯）
+                interactableProps['corridor_window'] = { mesh: windowGroup, hb: makePropHitbox(winW, winH, 2, windowGroup, 'window') };
+            })();
+            // 落地窗互動 hitbox（放在走廊入口）
+            windowHitbox = new THREE.Mesh(new THREE.BoxGeometry(16, 18, 2), new THREE.MeshBasicMaterial({visible:false})); windowHitbox.position.set(0,-1,20); scene.add(windowHitbox); windowHitbox.userData = { id: 'window' };
+
+            // 後門（貼地）：加高，避免門框過矮
+            let bDoorPts = [ new THREE.Vector3(-3, -10, -19.9), new THREE.Vector3(3, -10, -19.9), new THREE.Vector3(3, 3, -19.9), new THREE.Vector3(-3, 3, -19.9), new THREE.Vector3(-3, -10, -19.9) ];
+            const bDoorMesh = new THREE.Line(new THREE.BufferGeometry().setFromPoints(bDoorPts), new THREE.LineBasicMaterial({ color: 0xffffff, transparent:true, opacity:0.15 })); scene.add(bDoorMesh); roomLines.push(bDoorMesh); roomOrigVerts.push(Array.from(bDoorMesh.geometry.attributes.position.array));
+            let knobPts = []; for(let i=0; i<=16; i++) { let a=(i/16)*Math.PI*2; knobPts.push(new THREE.Vector3(2.2+Math.cos(a)*0.2, -4.5 + Math.sin(a)*0.2, -19.8)); }
+            scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(knobPts), new THREE.LineBasicMaterial({ color: 0xffffff, transparent:true, opacity:0.15 })));
+            doorHitbox = new THREE.Mesh(new THREE.BoxGeometry(6, 13, 2), new THREE.MeshBasicMaterial({visible:false})); doorHitbox.position.set(0,-3.5,-19.9); scene.add(doorHitbox); doorHitbox.userData = { id: 'door' };
+
+            const bed = addBox(8,3,14, 15,-8.5,-10); addBox(7.8,1,6, 15,-6.5,-13); 
+            bedHitbox = new THREE.Mesh(new THREE.BoxGeometry(10,8,16), new THREE.MeshBasicMaterial({visible:false})); bedHitbox.position.set(15,-8.5,-10); scene.add(bedHitbox); bedHitbox.userData = { id: 'bed' };
+
+            const desk = addBox(10,5,5, -14,-7.5,-15); const chair = addBox(3,3,3, -10,-8.5,-12);
+
+            // 場景風格強化：天花燈框 + 地面引導線 + 走廊門框
+            addBox(6, 0.3, 2.2, 0, 8.1, -1.5, dimMat);
+            for (let i = 0; i < 7; i++) {
+                const z0 = -14 + i * 4.2;
+                const leftLine = new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-1.2, -9.85, z0), new THREE.Vector3(-0.3, -9.85, z0 + 2.4)]),
+                    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1 })
+                );
+                const rightLine = new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(1.2, -9.85, z0), new THREE.Vector3(0.3, -9.85, z0 + 2.4)]),
+                    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1 })
+                );
+                scene.add(leftLine); scene.add(rightLine);
+                roomLines.push(leftLine, rightLine);
+                roomOrigVerts.push(Array.from(leftLine.geometry.attributes.position.array), Array.from(rightLine.geometry.attributes.position.array));
+            }
+            addBox(1.2, 18, 1, -7.5, -1, 20.5, dimMat);
+            addBox(1.2, 18, 1, 7.5, -1, 20.5, dimMat);
+            
+            addBox(3,4,3, 15,-8,-1.5);
+            const letGroup = new THREE.Group(); letGroup.position.set(15, -5.9, -1.5);
+            letGroup.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.5, 0.05, 2.0)), baseMat));
+            letGroup.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1.5, 0.02, 1.0)), dimMat)).children[0].position.set(0,0.03,-0.5);
+            scene.add(letGroup);
+            letterHitbox = new THREE.Mesh(new THREE.BoxGeometry(3,3,3), new THREE.MeshBasicMaterial({visible:false})); letterHitbox.position.copy(letGroup.position); scene.add(letterHitbox); letterHitbox.userData = { id: 'letter' };
+
+            const vaseGroup = new THREE.Group(); vaseGroup.position.set(-14, -4.5, -15); scene.add(vaseGroup);
+            vaseGroup.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CylinderGeometry(0.5, 0.8, 2, 6)), baseMat));
+            interactableProps['vase'] = { mesh: vaseGroup, hb: makePropHitbox(3,4,3, vaseGroup, 'vase') };
+            
+            // 左側窗簾調整為落地窗高度
+            const curtain = addBox(4, 18, 0.5, -6, -1, 19.5, dimMat); curtain.visible = false;
+            interactableProps['curtain'] = { mesh: curtain, hb: makePropHitbox(6,20,2, curtain, 'curtain') };
+
+            const footGroup = new THREE.Group(); footGroup.position.set(5, -9.8, 0); footGroup.visible = false; scene.add(footGroup);
+            footGroup.add(addBox(0.8, 0.1, 2, -1, 0, 0, dimMat)); footGroup.add(addBox(0.8, 0.1, 2, 1, 0, 2, dimMat));
+            interactableProps['footprints'] = { mesh: footGroup, hb: makePropHitbox(4,2,4, footGroup, 'footprints') };
+
+            // --- 鏡框貼牆 (以細框示意鏡面) ---
+            const mirrorFrame = addBox(0.2, 8, 5, -19.9, 0, 0,
+                new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 })
+            );
+            // 預先建立一個透明平面作為鏡中圖像承載，texture 載入後會替換材質 map
+            mirrorPlane = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 7.6), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide }));
+            mirrorPlane.position.set(-19.85, 0, 0);
+            mirrorPlane.rotation.y = Math.PI / 2; // 面向室內 (X 正向)
+            mirrorPlane.visible = false;
+            scene.add(mirrorPlane);
+
+            // 以 TextureLoader 載入鏡中影像（檔案：images/mirror_figure.png）
+            const applyMirrorFallbackTexture = (message) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1024; canvas.height = 1024;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#080808';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                ctx.lineWidth = 8;
+                ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.font = '42px serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+                const fallbackTexture = new THREE.CanvasTexture(canvas);
+                fallbackTexture.minFilter = THREE.LinearFilter;
+                fallbackTexture.magFilter = THREE.LinearFilter;
+                mirrorPlane.material.map = fallbackTexture;
+                mirrorPlane.material.opacity = 0.16;
+                mirrorPlane.material.depthWrite = false;
+                mirrorPlane.material.needsUpdate = true;
+                mirrorPlaneMat = mirrorPlane.material;
+            };
+
+            if (window.location.protocol === 'file:') {
+                console.warn('file:// 模式會被瀏覽器阻擋貼圖（CORS）。請改用本機 http 伺服器開啟。');
+                applyMirrorFallbackTexture('請用本機伺服器啟動');
+            } else {
+                const loader = new THREE.TextureLoader();
+                loader.load('images/mirror_figure.png', (texture) => {
+                    texture.minFilter = THREE.LinearFilter;
+                    texture.magFilter = THREE.LinearFilter;
+                    mirrorPlane.material.map = texture;
+                    mirrorPlane.material.opacity = 0.16;
+                    mirrorPlane.material.depthWrite = false;
+                    mirrorPlane.material.needsUpdate = true;
+                    mirrorPlaneMat = mirrorPlane.material;
+                }, undefined, () => {
+                    console.warn('鏡中影像載入失敗：images/mirror_figure.png');
+                    applyMirrorFallbackTexture('鏡中影像載入失敗');
+                });
+            }
+
+            // 建立互動用 hitbox（使用鏡框位置）
+            interactableProps['mirror'] = { mesh: mirrorPlane, hb: makePropHitbox(2, 12, 6, mirrorFrame, 'mirror') };
+
+            const calendar = addBox(1.5, 1.5, 0.2, -12, -4.5, -16, baseMat);
+            interactableProps['calendar'] = { mesh: calendar, hb: makePropHitbox(3,3,3, calendar, 'calendar') };
+
+            const wallText = addBox(4, 2, 0.1, 0, 2, -19.5, dimMat); wallText.visible = false;
+            interactableProps['wall'] = { mesh: wallText, hb: makePropHitbox(6,4,2, wallText, 'wall') };
+            
+            interactableProps['flower'] = { hb: interactableProps['vase'].hb };
+
+            // 實際阻擋：避免角色直接穿過家具
+            registerSolidCollider(10, 16, 15, -10, 'bed', 0.5);
+            registerSolidCollider(10, 5, -14, -15, 'desk', 0.5);
+            registerSolidCollider(3.6, 3.6, -10, -12, 'chair', 0.45);
+            registerSolidCollider(4.2, 4.2, 15, -1.5, 'cabinet', 0.3);
+
+            const shadowGeo = new THREE.EdgesGeometry(new THREE.CircleGeometry(2, 8));
+            playerShadow = new THREE.LineSegments(shadowGeo, new THREE.LineBasicMaterial({color: 0xff0000, transparent: true, opacity: 0.15}));
+            playerShadow.rotation.x = -Math.PI / 2; playerShadow.position.y = -9.9;
+
+            // --- 地板線條（木地板拼縫） ---
+            const floorLineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.08 });
+            for (let i = -18; i <= 18; i += 2) {
+                const pts = [new THREE.Vector3(i, -9.9, -19.8), new THREE.Vector3(i, -9.9, 19.8)];
+                const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), floorLineMat);
+                scene.add(line); roomLines.push(line); roomOrigVerts.push(Array.from(line.geometry.attributes.position.array));
+            }
+
+            // --- 天花板暗示線（四邊的裝飾線腳） ---
+            const ceilingLineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.06 });
+            // 四條天花板邊緣線
+            const corners = [
+                [ -19.8, -19.8 ], [ 19.8, -19.8 ], [ -19.8, 19.8 ], [ 19.8, 19.8 ]
+            ];
+            // horizontal front/back
+            const front = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-19.8, 9.8, -19.8), new THREE.Vector3(19.8, 9.8, -19.8)]), ceilingLineMat);
+            const back = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-19.8, 9.8, 19.8), new THREE.Vector3(19.8, 9.8, 19.8)]), ceilingLineMat);
+            scene.add(front); roomLines.push(front); roomOrigVerts.push(Array.from(front.geometry.attributes.position.array));
+            scene.add(back); roomLines.push(back); roomOrigVerts.push(Array.from(back.geometry.attributes.position.array));
+            // vertical left/right
+            const left = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-19.8, 9.8, -19.8), new THREE.Vector3(-19.8, 9.8, 19.8)]), ceilingLineMat);
+            const right = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(19.8, 9.8, -19.8), new THREE.Vector3(19.8, 9.8, 19.8)]), ceilingLineMat);
+            scene.add(left); roomLines.push(left); roomOrigVerts.push(Array.from(left.geometry.attributes.position.array));
+            scene.add(right); roomLines.push(right); roomOrigVerts.push(Array.from(right.geometry.attributes.position.array));
+
+            // --- 床頭板與床單褶皺 ---
+            const headboardMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 });
+            for (let i = -3; i <= 3; i += 1.5) {
+                const pts = [new THREE.Vector3(11 + i, -9.9, -2), new THREE.Vector3(11 + i, -5, -2)];
+                const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), headboardMat);
+                scene.add(line); roomLines.push(line); roomOrigVerts.push(Array.from(line.geometry.attributes.position.array));
+            }
+            // 床單褶皺（床面上的微弧線）
+            for (let i = 0; i < 3; i++) {
+                const arcPoints = [];
+                for (let j = 0; j <= 10; j++) {
+                    const t = j / 10;
+                    arcPoints.push(new THREE.Vector3(
+                        11 + (Math.random() - 0.5) * 0.5,
+                        -6.5 + Math.sin(t * Math.PI) * 0.3,
+                        -10 + t * 8
+                    ));
+                }
+                const arcLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(arcPoints), 
+                    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1 }));
+                scene.add(arcLine); roomLines.push(arcLine); roomOrigVerts.push(Array.from(arcLine.geometry.attributes.position.array));
+            }
+
+            scene.add(playerShadow);
+
+            ribsGroup = new THREE.Group();
+            for(let i=0; i<4; i++) {
+                const curve = new THREE.EllipseCurve(0, -i*0.4, 1.5, 1+i*0.2, 0, Math.PI, false, 0);
+                const points = curve.getPoints(15);
+                ribsGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), new THREE.LineBasicMaterial({color: 0xffffff, transparent:true, opacity:0.6})));
+            }
+            ribsGroup.position.set(0, -0.5, -2); ribsGroup.rotation.x = Math.PI/2; ribsGroup.visible = false;
+            camera.add(ribsGroup); scene.add(camera);
+        }
+
+        let typeReadInt;
+        function checkInteractions(dt) {
+            if (gameState !== 'AWAKE') return;
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+            const hits = raycaster.intersectObjects([bedHitbox, letterHitbox, windowHitbox, doorHitbox, ...Object.values(interactableProps).map(p=>p.hb)]);
+            
+            const hint = document.getElementById('interaction-hint'), prog = document.getElementById('gaze-progress'), ret = document.getElementById('reticle'), infText = document.getElementById('inference-text');
+            currentGazedObject = null;
+
+            if (hits.length > 0) {
+                const target = hits[0].object.userData.id;
+                currentGazedObject = target;
+                ret.style.transform = 'translate(-50%, -50%) scale(1.5)'; ret.style.backgroundColor = '#fff';
+                if (currentDailyTask && !currentDailyTask.completed && target === currentDailyTask.target) {
+                    hint.innerText = `按 E：${currentDailyTask.actionText}`;
+                    hint.style.opacity = '1';
+                }
+
+                if (target === 'letter') {
+                    letterReadTimer += dt;
+                    hint.innerText = currentDay<=letterInstances.length ? "凝視閱讀信件" : "（沒有新信件）"; hint.style.opacity = '1';
+                    prog.style.opacity = '1'; prog.style.borderColor = 'transparent'; prog.style.borderTopColor = '#fff';
+                    prog.style.transform = `translate(-50%, -50%) rotate(${(letterReadTimer/1.5)*360}deg)`;
+                    if (letterReadTimer >= 1.5 && currentDay<=letterInstances.length) { openLetter(currentDay); letterReadTimer=0; prog.style.opacity='0'; }
+                } 
+                else if (target === 'bed') {
+                    gazeTimer += dt; if(gazeTimer===dt) AudioEngine.startHeartbeat(0.3);
+                    hint.innerText = (currentDailyTask && !currentDailyTask.completed) ? "先完成今日任務，再睡覺" : "凝視入睡";
+                    hint.style.opacity = '1';
+                    prog.style.opacity = '1'; prog.style.borderColor = 'transparent'; prog.style.borderTopColor = '#f00';
+                    prog.style.transform = `translate(-50%, -50%) rotate(${(gazeTimer/2.0)*360}deg)`;
+                    if (gazeTimer >= 2.0) {
+                        if (currentDailyTask && !currentDailyTask.completed) {
+                            gazeTimer = 0;
+                            AudioEngine.stopHeartbeat();
+                            showEphemeralText('今日小任務尚未完成。');
+                        } else {
+                            AudioEngine.stopHeartbeat(); startSleepSequence();
+                        }
+                    }
+                }
+                else if (target === 'window') {
+                    gazeTimer += dt;
+                    if(gazeTimer > 3.0 && windowGazeCount < currentDay) { windowGazeCount++; gazeTimer = -5; unlockPoemFragment('P20'); }
+                }
+                else if (target === 'door') {
+                    gazeTimer += dt;
+                    if(currentDay >= 3) {
+                        infText.innerText = (currentDay > 3) ? "上次它以為妳要出去。下次它會鎖更緊。" : "門是鎖著的。妳從來沒有鑰匙。"; 
+                        infText.style.opacity = '1';
+                        if(gazeTimer > 2.0) { doorGazeCount++; gazeTimer = -5; if(doorGazeCount>2) unlockPoemFragment('P11'); }
+                    }
+                }
+                else {
+                    // 鏡子凝視顯示處理
+                    if (target === 'mirror') {
+                        mirrorGazeTimer += dt;
+                        if (mirrorPlaneMat) mirrorPlaneMat.opacity = Math.min(0.85, 0.16 + mirrorGazeTimer * MIRROR_FADE_SPEED);
+                    } else {
+                        mirrorGazeTimer = 0;
+                        if (mirrorPlaneMat) mirrorPlaneMat.opacity = (interactableProps['mirror']?.mesh?.visible ? 0.16 : 0.0);
+                    }
+
+                    let clue = emotionalClues[target];
+                    if (clue && currentDay >= clue.day) {
+                        // 如果此線索被鎖死，顯示被拒絕訊息
+                        if (lockedClues.has(target)) {
+                            infText.innerText = "妳拒絕了這個線索。";
+                            infText.style.opacity = '1'; infText.style.color = '#aa4444';
+                        } else {
+                            // 矛盾觸發：在第三天後，接受度中間區間有機率造成矛盾
+                            if (currentDay >= 3 && acceptance >= 40 && acceptance <= 60 && !clue.isContradicting && Math.random() < contradictionProbability) {
+                                clue.isContradicting = true; clue.contradictTimer = 3.0; contradictionLevel++;
+                            }
+
+                            // 處理檢視進度
+                            if (clue.isContradicting) {
+                                // 在矛盾狀態下閃爍顯示片段，且不推進進度
+                                clue.contradictTimer -= dt;
+                                const a = Math.floor((clue.contradictTimer * 10) % 2);
+                                const alt = clue.fragments[(clue.currentFragment) % clue.fragments.length].text;
+                                const alt2 = clue.fragments[Math.max(0, clue.currentFragment-1) % clue.fragments.length].text || alt;
+                                infText.innerText = a === 0 ? alt : alt2;
+                                infText.style.opacity = '1'; infText.style.color = '#ff4444';
+                                if (clue.contradictTimer <= 0) { clue.isContradicting = false; }
+                            } else {
+                                // 根據是否激活誤解，選擇不同的 fragments 陣列
+                                let activeFragments = clue.isActive ? (clue.delusionFragments || clue.fragments) : clue.fragments;
+                                let activeIndex = clue.isActive ? (clue.delusionIndex || 0) : clue.currentFragment;
+                                
+                                clue.inspectProgress += dt;
+                                if (clue.inspectProgress >= clue.THRESH && activeIndex < activeFragments.length) {
+                                    clue.inspectProgress = 0;
+                                    const frag = activeFragments[activeIndex];
+                                    infText.innerText = frag.text;
+                                    
+                                    if (frag.tag === 'care') acceptance = Math.min(100, acceptance + 1);
+                                    else if (frag.tag === 'distance' || frag.tag === 'neglect') acceptance = Math.max(0, acceptance - 1);
+                                    
+                                    if (clue.isActive) {
+                                        clue.delusionIndex = (clue.delusionIndex || 0) + 1;
+                                        if (clue.delusionIndex >= activeFragments.length && clue.target === 'mirror') unlockPoemFragment('P15');
+                                    } else {
+                                        clue.currentFragment++;
+                                        if (clue.currentFragment >= clue.fragments.length && clue.target === 'vase') unlockPoemFragment('P01');
+                                        if (clue.currentFragment >= clue.fragments.length && clue.target === 'calendar') unlockPoemFragment('P07');
+                                    }
+                                } else {
+                                    if (activeIndex > 0) infText.innerText = activeFragments[activeIndex - 1].text;
+                                    else infText.innerText = "？";
+                                }
+                                
+                                if (activeIndex >= activeFragments.length && clue.inspectProgress > 5.0) {
+                                    acceptance = Math.min(100, acceptance + 0.5 * dt);
+                                    if (!clue._gaveGazeFeedback) {
+                                        clue._gaveGazeFeedback = true;
+                                        // 顯示最後一段作為微弱回饋，並短暫發光
+                                        const lastText = (activeFragments && activeFragments.length) ? activeFragments[activeFragments.length-1].text : '';
+                                        infText.innerText = lastText || infText.innerText;
+                                        infText.style.color = clue.isActive ? '#ff6666' : '#ffdedd';
+                                        infText.style.textShadow = '0 0 12px rgba(255,100,100,0.6)';
+                                        if (typeof AudioEngine !== 'undefined' && AudioEngine.playBreath) AudioEngine.playBreath();
+                                        setTimeout(() => { clue._gaveGazeFeedback = false; infText.style.textShadow = ''; }, 3000);
+                                    }
+                                }
+                                
+                                infText.style.opacity = '1';
+                                infText.style.color = clue.isActive ? '#ff4444' : 'rgba(200, 50, 50, 0.9)';
+                            }
+                        }
+                    }
+                }
+            } else {
+                gazeTimer = 0; letterReadTimer = 0; AudioEngine.stopHeartbeat();
+                if(Object.values(emotionalClues).some(o => o.inspectProgress > 0)) Object.values(emotionalClues).forEach(o => o.inspectProgress = 0);
+                hint.style.opacity = '0'; prog.style.opacity = '0'; infText.style.opacity = '0';
+                ret.style.transform = 'translate(-50%, -50%) scale(1)'; ret.style.backgroundColor = 'rgba(255,255,255,0.5)';
+            }
+        }
+
+        // NOTE: old "fake clue" / uncertainty mechanics replaced by emotionalClues + contradiction system.
+
+        let fullLetterContentToType = "";
+        let currentReadingDay = 0;
+        let lastLetterChanged = false; // 新增：用於記錄錯亂提示
+
+        function openLetter(day) {
+            releasePointerLockForUI();
+            gameState = 'READING'; AudioEngine.playPaper(); currentReadingDay = day;
+            const sc = document.getElementById('letter-reading-screen'), txtEl = document.getElementById('letter-reading-text');
+            txtEl.innerText = ""; sc.style.display = 'flex'; setTimeout(() => sc.style.opacity = '1', 50);
+            
+            // 若當日有矛盾的線索，顯示短暫閃爍提示
+            let activeContradiction = Object.values(emotionalClues).find(c => c.isContradicting && c.day === currentDay);
+            if (activeContradiction) showEphemeralText('（記憶閃爍…）');
+
+            // 檢查是否有被激活的誤解（需要先觸發打臉）
+            let activeOdd = Object.values(emotionalClues).find(c => c.isActive && c.day === currentDay);
+            if (activeOdd) { triggerUncertainty(activeOdd); }
+
+            const letter = letterInstances[day-1];
+            const state = { activeDelusions: playerCognition.activeDelusions, hasAnyReckoningOccurred, acceptance, currentDay, trustLevel: playerCognition.trustLevel, memoryDecayCounter: playerCognition.memoryDecayCounter };
+            const segs = letter.getCurrentSegments(state);
+            
+            lastLetterChanged = false;
+            if (letter.lastReadSnapshot && JSON.stringify(segs) !== JSON.stringify(letter.lastReadSnapshot)) {
+                lastLetterChanged = true;
+                AudioEngine.playTapeWobble(); 
+                document.getElementById('canvas-container').classList.add('ghost-room-effect');
+                setTimeout(() => document.getElementById('canvas-container').classList.remove('ghost-room-effect'), 500);
+                if(day===4) unlockPoemFragment('P16');
+            }
+            letter.lastReadSnapshot = segs; letter.readCount++;
+
+            let fullText = (segs[0] && segs[0].senderOverride) ? `${segs[0].senderOverride}：\n` : (letter.template.sender ? `${letter.template.sender}：\n` : "");
+            segs.forEach(s => fullText += s.text + "\n");
+            fullLetterContentToType = fullText;
+
+            let charIdx = 0;
+            typeReadInt = setInterval(() => {
+                if(charIdx < fullLetterContentToType.length) txtEl.innerText += fullLetterContentToType[charIdx++];
+                else { 
+                    clearInterval(typeReadInt); typeReadInt = null;
+                    document.getElementById('letter-close-hint').style.opacity = '1'; 
+                    if(day===1) unlockPoemFragment('P02'); if(day===3 && fullLetterContentToType.includes('如果她說')) unlockPoemFragment('P06'); if(day===7) unlockPoemFragment('P19');
+                }
+            }, 50);
+        }
+
+        function closeLetter() {
+            if(gameState !== 'READING') return; 
+            
+            if(typeReadInt) {
+                clearInterval(typeReadInt); typeReadInt = null;
+                document.getElementById('letter-reading-text').innerText = fullLetterContentToType;
+                document.getElementById('letter-close-hint').style.opacity = '1';
+                
+                if(currentReadingDay===1) unlockPoemFragment('P02'); 
+                if(currentReadingDay===3 && fullLetterContentToType.includes('如果她說')) unlockPoemFragment('P06'); 
+                if(currentReadingDay===7) unlockPoemFragment('P19');
+                return; 
+            }
+
+            const sc = document.getElementById('letter-reading-screen'); sc.style.opacity = '0'; document.getElementById('letter-close-hint').style.opacity = '0'; AudioEngine.playPaper();
+            setTimeout(() => { 
+                sc.style.display = 'none'; gameState = 'AWAKE'; updateMusicForState();
+                // 新增：信件關閉後，若內容改變，顯示錯亂提示
+                if(lastLetterChanged) setTimeout(() => showEphemeralText("（信好像和上次讀的不一樣。）"), 500);
+            }, 1000);
+        }
+
+        let activeBlood = [];
+        function triggerCough() {
+            if (gameState === 'COLLAPSE') {
+                AudioEngine.playChoke(); shakeIntensity = 0.5;
+                document.getElementById('vignette').style.background = 'rgba(255,0,0,0.5)'; setTimeout(()=>document.getElementById('vignette').style.background = '', 200);
+                return;
+            }
+            if (gameState !== 'AWAKE') return;
+
+            // 冷靜期檢查：若還在鎖定時間內，只發出窒塞聲並退出
+            const now = Date.now();
+            if (now < coughLockedUntil) {
+                AudioEngine.playChoke();
+                return;
+            }
+
+            // 若距離上次咳嗽超過 2 秒，重置連續計數
+            if (lastCoughTime && (now - lastCoughTime) > 2000) {
+                consecutiveCough = 0;
+            }
+
+            // 計數連續咳嗽
+            consecutiveCough++;
+            lastCoughTime = now;
+
+            if (consecutiveCough >= 3) {
+                // 鎖住 20 秒
+                coughLockedUntil = now + 20000;
+                consecutiveCough = 0;
+                showEphemeralText("停下來。妳在做什麼？");
+                // 強制降低 acceptance
+                acceptance = Math.max(0, acceptance - acceptancePenaltyConsecutive);
+                if (AudioEngine.playGentleTone) AudioEngine.playGentleTone();
+                return;
+            }
+
+            shakeIntensity = 1.2; coughCountToday++; totalCoughCount++; weaknessTimer = 5.0; AudioEngine.playScrape();
+            if(totalCoughCount===1) unlockPoemFragment('P03');
+            if(totalCoughCount>5) unlockPoemFragment('P09');
+            
+            if (hasAnyReckoningOccurred) coughedAfterReckoning = true; 
+
+            roomLines.forEach(l => { if(l) l.material.opacity = 0.05; });
+            ribsGroup.visible = true; playerShadow.material.opacity = 0.8;
+            setTimeout(() => { 
+                roomLines.forEach(l => { if(l) l.material.opacity = 0.3; }); 
+                ribsGroup.visible = false; playerShadow.material.opacity = 0.15 + (currentDay * 0.05);
+            }, 300);
+
+            if (currentGazedObject && currentGazedObject !== 'window' && currentGazedObject !== 'door') {
+                coughedObjects.add(currentGazedObject);
+                const targetObj = currentGazedObject === 'bed' ? bedHitbox : (currentGazedObject==='letter' ? letterHitbox : interactableProps[currentGazedObject].hb);
+                for(let i=0; i<15; i++) createBloodStroke(targetObj.position.clone().add(new THREE.Vector3((Math.random()-0.5)*2, (Math.random()-0.5)*2, (Math.random()-0.5)*2)), true, false);
+                if(currentGazedObject === 'curtain') unlockPoemFragment('P05');
+                
+                // 針對情感線索的影響：降低 acceptance 並可能啟動「誤解」/假線索流程
+                if (emotionalClues[currentGazedObject]) {
+                    acceptance = Math.max(0, acceptance - acceptanceDecreaseOnCough);
+                    let clue = emotionalClues[currentGazedObject];
+                    
+                    // 舊版紅劇場：誤解激活
+                    clue.delusionCount++;
+                    if (clue.delusionCount === 2 && !clue.hasReckoned) {
+                        clue.isActive = true;
+                        playerCognition.activeDelusions.push(clue.target);
+                        generateFakeClue(clue);
+                        AudioEngine.playScrape();
+                    } else if (clue.delusionCount === 3 && clue.isActive) {
+                        showFakeSuccess('妳聽見她了。');
+                    } else if (clue.delusionCount >= 5 && clue.isActive) {
+                        triggerUncertainty(clue);
+                    }
+                    
+                    // 鎖死邏輯
+                    if (clue.currentFragment >= 2 && !lockedClues.has(currentGazedObject)) {
+                        lockedClues.add(currentGazedObject);
+                        showEphemeralText("妳拒絕了這個線索。");
+                    }
+                }
+            } else if (currentGazedObject === 'window') { unlockPoemFragment('P14'); }
+              else if (currentGazedObject === 'door') { unlockPoemFragment('P21'); }
+
+            spawnCoughParticleBurst(30, 1.0);
+        }
+
+        function createBloodStroke(pos, isConcentrated, isWall = false) {
+            const points = [new THREE.Vector3(pos.x, pos.y, pos.z)];
+            if (isWall) {
+                const dropLen = 0.5 + Math.random() * 2.0; points.push(new THREE.Vector3(pos.x, Math.max(-9.9, pos.y - dropLen), pos.z));
+            } else {
+                const angle = Math.random() * Math.PI * 2, len = isConcentrated ? 0.8 : 0.3; points.push(new THREE.Vector3(pos.x + Math.cos(angle)*len, pos.y - Math.random()*len, pos.z + Math.sin(angle)*len));
+            }
+            const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), strokeMat.clone());
+            scene.add(line); bloodStrokes.push(line);
+        }
+
+        function triggerCollapse() {
+            gameState = 'COLLAPSE'; isCollapsing = true; collapseTimer = 18.0; AudioEngine.playTapeWobble(); AudioEngine.startHeartbeat(1.5);
+            document.getElementById('ui-layer').style.display='none'; document.getElementById('reticle').style.display='none'; document.getElementById('interaction-hint').style.opacity='0'; document.getElementById('inference-text').style.opacity='0';
+            
+            let dir = new THREE.Vector3(0,0,-19.9).sub(camera.position).normalize();
+            targetLat = 0; targetLon = THREE.MathUtils.radToDeg(Math.atan2(dir.x, dir.z));
+        }
+
+        function startSleepSequence() {
+            gameState = 'SLEEPING'; gazeTimer = 0; AudioEngine.startHeartbeat(0.8);
+            document.getElementById('ui-layer').style.display='none'; document.getElementById('reticle').style.display='none'; document.getElementById('gaze-progress').style.opacity='0'; document.getElementById('interaction-hint').style.opacity='0'; document.getElementById('inference-text').style.opacity='0';
+            document.getElementById('task-panel').style.display = 'none';
+            if(coughCountToday===0 && currentDay===2) unlockPoemFragment('P10');
+            targetLat = 85; 
+
+            // 入睡時對 acceptance 的影響
+            if (coughCountToday === 0 && letterInstances[currentDay-1]?.readCount > 0) {
+                acceptance = Math.min(100, acceptance + acceptanceGainOnRead);
+            } else if (coughCountToday > 0) {
+                acceptance = Math.max(0, acceptance - acceptancePenaltyOnCoughDay);
+            }
+            
+            if (currentDay >= 7) {
+                targetLat = 0; targetLon = 180; 
+                unlockPoemFragment('P22'); unlockPoemFragment('P26');
+                setTimeout(() => { triggerFinalCough(); }, 1000);
+            } else {
+                // 若在當日出現矛盾，先進入 dreamScene，再進入夜晚
+                if (contradictionLevel > 0) {
+                    // 鎖定咳嗽輸入於夢境期間
+                    coughLockedUntil = Date.now() + dreamDuration;
+                    startDreamScene(dreamDuration, () => { setTimeout(() => enterNightMode(), 3500); });
+                } else {
+                    setTimeout(() => enterNightMode(), 3500);
+                }
+            }
+        }
+
+        function enterNightMode() {
+            gameState = 'NIGHT'; AudioEngine.stopHeartbeat(); document.getElementById('canvas-container').style.opacity = '0';
+            const ns = document.getElementById('night-screen'), pb = document.getElementById('sleep-progress-bar');
+            ns.style.display = 'flex'; setTimeout(() => ns.style.opacity = '1', 50);
+            currentDay++; document.getElementById('day-title').innerText = `Day ${currentDay}`;
+            pb.style.width = '0%'; setTimeout(() => { pb.style.width = '100%'; }, 500);
+            
+            playerCognition.memoryDecayCounter++;
+            const state = { activeDelusions: playerCognition.activeDelusions, hasAnyReckoningOccurred, acceptance, currentDay, trustLevel: playerCognition.trustLevel, memoryDecayCounter: playerCognition.memoryDecayCounter };
+            const appRules = contaminationRules.filter(r => r.condition(state) && !letterInstances.every(l => l.appliedContaminations.includes(r.id)));
+            if(appRules.length > 0) { const sr = appRules[Math.floor(Math.random()*appRules.length)]; letterInstances.forEach(l => { if(!l.appliedContaminations.includes(sr.id)) l.appliedContaminations.push(sr.id); }); }
+
+            setTimeout(wakeUp, 6500);
+        }
+
+        function wakeUp() {
+            gameState = 'WAKING'; coughCountToday = 0; AudioEngine.playScrape(); document.getElementById('night-screen').style.opacity = '0';
+            const wf = document.getElementById('wake-flash'); wf.style.display = 'block'; wf.style.opacity = '1';
+            spawnCoughParticleBurst(20, 0.75);
+            
+            if(currentDay===2) interactableProps['curtain'].mesh.visible=true;
+            if(currentDay===3) { interactableProps['footprints'].mesh.visible=true; triggerCollapse(); }
+            if(currentDay===4) {
+                interactableProps['mirror'].mesh.visible=true;
+                if (mirrorPlaneMat) mirrorPlaneMat.opacity = 0.16;
+            }
+            if(currentDay===5) { let cal = interactableProps['calendar'].mesh; cal.material = cal.material.clone(); cal.material.color.setHex(0xff0000); unlockPoemFragment('P17'); }
+            if(currentDay===6) interactableProps['wall'].mesh.visible=true;
+            if(currentDay===7) { let stem = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,1.2,0), new THREE.Vector3(0,2.5,0.3)]), strokeMat); interactableProps['vase'].mesh.add(stem); }
+            setupDailyTask(currentDay);
+
+            for(let i=0; i<3; i++) {
+                const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0, 1+Math.random(), 0)]);
+                const line = new THREE.Line(geo, new THREE.LineBasicMaterial({color: 0xffffff, transparent: true, opacity: 0.4}));
+                line.position.set((Math.random()>0.5?1:-1)*19.9, -9 + Math.random()*10, (Math.random()>0.5?1:-1)*19.9);
+                line.rotation.z = (Math.random()-0.5)*0.2; scene.add(line); roomLines.push(line); roomOrigVerts.push(Array.from(line.geometry.attributes.position.array));
+            }
+
+            document.getElementById('canvas-container').style.opacity = '1'; 
+            if(!isCollapsing) { targetLat = 0; lat = 0; lon = 90; targetLon = 90; }
+            bloodStrokes.forEach(s => { s.material.opacity = Math.max(0.1, s.material.opacity - 0.2); });
+
+            setTimeout(() => {
+                wf.style.transition = 'opacity 2s ease-out'; wf.style.opacity = '0'; document.getElementById('night-screen').style.display = 'none';
+                setTimeout(() => { wf.style.display = 'none'; wf.style.transition = 'none'; if(!isCollapsing){ document.getElementById('ui-layer').style.display = 'flex'; document.getElementById('reticle').style.display = 'block'; gameState = 'AWAKE'; updateAnReaction(); updateMusicForState(); } }, 2000);
+            }, 500);
+        }
+
+        // --- Day 7 final cough sequence and presentation ---
+        function spawnFinalBlood() {
+            if (!scene || !camera) return;
+            const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            const spawnPos = camera.position.clone().add(dir.multiplyScalar(2)); spawnPos.y -= 1.0;
+            const count = 40;
+            const posArr = new Float32Array(count * 3), vels = [];
+            for (let i = 0; i < count; i++) {
+                posArr[i*3] = spawnPos.x; posArr[i*3+1] = spawnPos.y; posArr[i*3+2] = spawnPos.z;
+                vels.push(new THREE.Vector3((Math.random()-0.5)*0.6 + dir.x*0.4, (Math.random()*0.3) + 0.02, (Math.random()-0.5)*0.6 + dir.z*0.4));
+            }
+            const pSys = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(posArr, 3)), bloodParticleMat); scene.add(pSys);
+            finalBloodParticles.push({ mesh: pSys, vels: vels, life: 180 });
+        }
+
+        function showFinalLine1() {
+            finalSpeechStage = 1;
+            finalLine1El = document.createElement('div');
+            finalLine1El.style.position = 'fixed';
+            finalLine1El.style.top = '43%'; finalLine1El.style.left = '50%'; finalLine1El.style.transform = 'translate(-50%, -50%)';
+            finalLine1El.style.color = 'rgba(255, 200, 200, 0.95)'; finalLine1El.style.fontSize = '1.3rem'; finalLine1El.style.letterSpacing = '4px';
+            finalLine1El.style.maxWidth = '80vw';
+            finalLine1El.style.textAlign = 'center'; finalLine1El.style.textShadow = '0 0 10px rgba(255,0,0,0.6)'; finalLine1El.style.fontFamily = '"MingLiU", serif';
+            finalLine1El.style.zIndex = '300'; finalLine1El.style.pointerEvents = 'none'; finalLine1El.style.opacity = '0'; finalLine1El.style.transition = 'opacity 2s';
+            finalLine1El.innerHTML = '她還好嗎？<br>安，我好久沒有看見妳了。'; document.body.appendChild(finalLine1El);
+            setTimeout(() => { finalLine1El.style.opacity = '1'; }, 100);
+        }
+
+        function showFinalLine2() {
+            finalSpeechStage = 2;
+            finalLine2El = document.createElement('div');
+            finalLine2El.style.position = 'fixed'; finalLine2El.style.top = '60%'; finalLine2El.style.left = '50%'; finalLine2El.style.transform = 'translate(-50%, -50%)';
+            finalLine2El.style.color = 'rgba(255, 180, 180, 0.95)'; finalLine2El.style.fontSize = '1.2rem'; finalLine2El.style.letterSpacing = '3px';
+            finalLine2El.style.maxWidth = '80vw';
+            finalLine2El.style.textAlign = 'center'; finalLine2El.style.textShadow = '0 0 10px rgba(255,0,0,0.5)'; finalLine2El.style.fontFamily = '"MingLiU", serif';
+            finalLine2El.style.zIndex = '300'; finalLine2El.style.pointerEvents = 'none'; finalLine2El.style.opacity = '0'; finalLine2El.style.transition = 'opacity 2s';
+            finalLine2El.innerHTML = '我前面的紅是什麼？<br>我不知道，但好漂亮喔，'; document.body.appendChild(finalLine2El);
+            if (finalLine1El) finalLine1El.style.opacity = '0';
+            setTimeout(() => { finalLine2El.style.opacity = '1'; }, 180);
+        }
+
+        function showFinalLine3() {
+            finalSpeechStage = 3;
+            finalLine3El = document.createElement('div');
+            finalLine3El.style.position = 'fixed'; finalLine3El.style.top = '50%'; finalLine3El.style.left = '50%'; finalLine3El.style.transform = 'translate(-50%, -50%)';
+            finalLine3El.style.color = '#ff0000'; finalLine3El.style.fontSize = '2.5rem'; finalLine3El.style.fontWeight = 'bold'; finalLine3El.style.letterSpacing = '6px';
+            finalLine3El.style.maxWidth = '86vw';
+            finalLine3El.style.textAlign = 'center'; finalLine3El.style.textShadow = '0 0 25px rgba(255,0,0,1), 0 0 60px rgba(200,0,0,0.8)';
+            finalLine3El.style.fontFamily = '"MingLiU", serif'; finalLine3El.style.zIndex = '301'; finalLine3El.style.pointerEvents = 'none';
+            finalLine3El.style.opacity = '0'; finalLine3El.style.transition = 'opacity 3s'; finalLine3El.innerHTML = '就像一朵美麗的朱槿花。';
+            document.body.appendChild(finalLine3El);
+            if (finalLine1El) finalLine1El.style.opacity = '0'; if (finalLine2El) finalLine2El.style.opacity = '0';
+            setTimeout(() => { finalLine3El.style.opacity = '1'; }, 200);
+        }
+
+        function onFinalClick() {
+            document.body.removeEventListener('click', onFinalClick);
+            document.body.style.cursor = '';
+            [finalLine1El, finalLine2El, finalLine3El].forEach(el => { if (el) el.remove(); });
+            finalCoughActive = false;
+            if (finalCoughInterval) { clearInterval(finalCoughInterval); finalCoughInterval = null; }
+            // 清理終幕血粒子
+            finalBloodParticles.forEach(sys => { if (sys.mesh) scene.remove(sys.mesh); });
+            finalBloodParticles = [];
+            // 淡入圖片，結束後再進結局
+            showFinalImage(() => {
+                triggerEnding();
+            });
+        }
+
+        function triggerFinalCough() {
+            gameState = 'FINAL'; finalCoughActive = true; finalCoughStartTime = Date.now(); finalSpeechStage = 0;
+            targetLon = 90; targetLat = 0; lon = 90; lat = 0; moveForward = 0; moveRight = 0;
+            document.getElementById('ui-layer').style.display = 'none'; document.getElementById('reticle').style.display = 'none'; document.getElementById('interaction-hint').style.opacity = '0'; document.getElementById('inference-text').style.opacity = '0'; document.getElementById('desktop-hint').style.display = 'none'; document.getElementById('gaze-progress').style.opacity = '0';
+            document.getElementById('task-panel').style.display = 'none';
+            if (document.pointerLockElement) document.exitPointerLock();
+            // 初始咳
+            AudioEngine.playHumanCough(0.6);
+            // 每 2 秒一次人咳 + 晃動
+            finalCoughInterval = setInterval(() => {
+                if (!finalCoughActive) { clearInterval(finalCoughInterval); finalCoughInterval = null; return; }
+                AudioEngine.playHumanCough(0.4 + Math.random() * 0.5);
+                shakeIntensity = 2.0;
+                document.getElementById('vignette').style.background = 'radial-gradient(circle, rgba(0,0,0,0) 0%, rgba(200,0,0,0.7) 70%, rgba(0,0,0,0.95) 100%)';
+                setTimeout(() => { document.getElementById('vignette').style.background = 'radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(50,0,0,0.4) 80%, rgba(0,0,0,0.9) 100%)'; }, 400);
+                spawnFinalBlood();
+            }, 2000);
+            // 第一句話在 3 秒後出現，伴隨強咳
+            setTimeout(() => { AudioEngine.playHumanCough(0.8); showFinalLine1(); }, 3000);
+            // 第二句話在 8 秒後
+            setTimeout(() => { AudioEngine.playHumanCough(0.7); showFinalLine2(); }, 8000);
+            // 最後紅字在 14 秒後
+            setTimeout(() => {
+                finalSpeechStage = 3; AudioEngine.playHumanCough(0.9); showFinalLine3();
+                if (finalCoughInterval) { clearInterval(finalCoughInterval); finalCoughInterval = null; }
+                setTimeout(() => { document.body.style.cursor = 'pointer'; document.body.addEventListener('click', onFinalClick); }, 3000);
+            }, 14000);
+        }
+
+        function triggerEnding() {
+            releasePointerLockForUI();
+            gameState = 'ENDING'; updateMusicForState(); AudioEngine.stopHeartbeat(); AudioEngine.startDrone();
+            const es = document.getElementById('ending-screen'), et = document.getElementById('ending-text');
+            et.textContent = '';
+            es.style.display = 'flex'; setTimeout(()=>es.style.opacity = '1', 100);
+
+            let endingData = generateEnding(); unlockPoemFragment('P24');
+            let charIdx = 0;
+            
+            setTimeout(() => { 
+                const typeInt = setInterval(() => { 
+                    if(charIdx < endingData.main.length) {
+                        et.textContent += endingData.main[charIdx++]; 
+                    } else { 
+                        clearInterval(typeInt); 
+                        // 新增：完整詩的呈現（字元寬間距與低語音效）
+                        if(endingData.secret) {
+                            setTimeout(() => {
+                                AudioEngine.playBreath();
+                                const secretSpan = document.createElement('span');
+                                secretSpan.style.letterSpacing = '8px';
+                                secretSpan.style.color = '#ffaaaa';
+                                const br = document.createElement('br');
+                                et.appendChild(br);
+                                et.appendChild(secretSpan);
+                                
+                                let secIdx = 0;
+                                const secTypeInt = setInterval(() => {
+                                    if(secIdx < endingData.secret.length) secretSpan.textContent += endingData.secret[secIdx++];
+                                    else clearInterval(secTypeInt);
+                                }, 120); // 詩篇打字更慢
+                            }, 2000);
+                        }
+                        // 若玩家已收集所有碎片，提供檢視完整長詩按鈕
+                        setTimeout(() => {
+                            if (playerCognition.collectedPoemFragments.size >= 26) {
+                                const btn = document.createElement('button');
+                                btn.textContent = '閱讀完整詩篇';
+                                btn.style.marginTop = '18px'; btn.style.padding = '8px 14px'; btn.style.background = '#220000'; btn.style.color = '#ffdddd'; btn.style.border = '1px solid #ff6666'; btn.style.cursor = 'pointer';
+                                btn.addEventListener('click', () => showLongPoem());
+                                et.appendChild(document.createElement('div')).appendChild(btn);
+                            }
+                        }, 2600);
+                        // 新增記憶畫廊按鈕
+                        setTimeout(() => {
+                            const galleryBtn = document.createElement('button');
+                            galleryBtn.textContent = '記憶畫廊 (B)';
+                            galleryBtn.style.marginTop = '12px'; galleryBtn.style.padding = '8px 14px';
+                            galleryBtn.style.background = '#220000'; galleryBtn.style.color = '#ffdddd';
+                            galleryBtn.style.border = '1px solid #ff6666'; galleryBtn.style.cursor = 'pointer';
+                            galleryBtn.addEventListener('click', () => showMemoryGallery());
+                            et.appendChild(document.createElement('div')).appendChild(galleryBtn);
+                        }, 2800);
+                        // 新增：重玩按鈕
+                        setTimeout(() => {
+                            const replayBtn = document.createElement('button');
+                            replayBtn.textContent = '重玩一遍';
+                            replayBtn.style.marginTop = '12px'; replayBtn.style.padding = '8px 14px';
+                            replayBtn.style.background = '#220000'; replayBtn.style.color = '#ffdddd';
+                            replayBtn.style.border = '1px solid #ff6666'; replayBtn.style.cursor = 'pointer';
+                            replayBtn.addEventListener('click', () => { window.location.reload(); });
+                            et.appendChild(document.createElement('div')).appendChild(replayBtn);
+                        }, 3000);
+                    }
+                }, 80); 
+            }, 3000);
+
+            if (coughedAfterReckoning) {
+                roomLines.forEach(l => {
+                    if(!l) return; const pos = l.geometry.attributes.position.array;
+                    for(let i=0; i<pos.length; i+=3){ pos[i]+=(Math.random()-0.5)*5; pos[i+1]+=(Math.random()-0.5)*5; pos[i+2]+=(Math.random()-0.5)*5; }
+                    l.geometry.attributes.position.needsUpdate = true; l.material.color.setHex(0xff2222); l.material.opacity = 0.8;
+                });
+            } else if (coughCountToday > 3) {
+                document.getElementById('canvas-container').style.filter = 'sepia(100%) hue-rotate(-50deg) saturate(500%) brightness(0.8)';
+                roomLines.forEach(l=>{if(l)l.material.color.setHex(0xff0000);});
+            } else {
+                let op = 0.3; const fade = setInterval(() => { op-=0.01; roomLines.forEach(l=>{if(l)l.material.opacity=Math.max(0,op);}); if(op<=0)clearInterval(fade); }, 100);
+            }
+        }
+
+        const DEFAULT_GAME_SETTINGS = {
+            uiScale: 1.2,
+            musicVolume: 50,
+            sfxVolume: 80,
+            muted: false
+        };
+        let gameSettings = { ...DEFAULT_GAME_SETTINGS };
+
+        function loadGameSettings() {
+            try {
+                const raw = localStorage.getItem('redflower_game_settings_v1');
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                gameSettings = { ...DEFAULT_GAME_SETTINGS, ...parsed };
+            } catch (_) {}
+        }
+
+        function saveGameSettings() {
+            try { localStorage.setItem('redflower_game_settings_v1', JSON.stringify(gameSettings)); } catch (_) {}
+        }
+
+        function applyUIScale() {
+            const styleEl = document.getElementById('ui-scaling');
+            if (!styleEl) return;
+            const s = Number(gameSettings.uiScale || 1.0);
+            const normal = Math.round(21 * s);
+            const overlay = Math.round(20 * s);
+            const intro = Math.round(18 * s);
+            styleEl.textContent = `
+        #desktop-hint, #fragment-counter, #ephemeral-text, #inference-text, #interaction-hint, #intro-hint, #reckoning-text, #fake-hint, #typewriter-text {
+            font-size: ${normal}px !important;
+            line-height: 1.4 !important;
+        }
+        #fragment-counter { font-weight: 600; }
+        #poem-overlay, #gallery-overlay, #letter-reading-screen { font-size: ${overlay}px !important; }
+        #gallery-overlay div { font-size: ${overlay}px !important; }
+        #poem-overlay div { font-size: ${overlay}px !important; }
+        #letter-reading-text { font-size: ${overlay}px !important; line-height: 1.7 !important; }
+        #dev-panel { font-size: 14px !important; }
+        #intro-screen { font-size: ${intro}px !important; }
+            `;
+        }
+
+        function applyAudioSettings() {
+            const mutedScale = gameSettings.muted ? 0 : 1;
+            AudioEngine.sfxVolume = (gameSettings.sfxVolume / 100) * mutedScale;
+            MusicEngine.baseVolume = (gameSettings.musicVolume / 100) * mutedScale;
+            if (MusicEngine.masterGain && MusicEngine.ctx) {
+                const now = MusicEngine.ctx.currentTime;
+                try { MusicEngine.masterGain.gain.cancelScheduledValues(now); } catch (_) {}
+                MusicEngine.masterGain.gain.setValueAtTime(MusicEngine.baseVolume, now);
+            }
+            if (AudioEngine.heartbeatGain && AudioEngine.ctx) {
+                AudioEngine.heartbeatGain.gain.setValueAtTime(0.35 * AudioEngine.sfxVolume, AudioEngine.ctx.currentTime);
+            }
+            if (AudioEngine.droneGain && AudioEngine.ctx) {
+                AudioEngine.droneGain.gain.setValueAtTime(0.1 * AudioEngine.sfxVolume, AudioEngine.ctx.currentTime);
+            }
+        }
+
+        function applyGameSettings() {
+            applyUIScale();
+            applyAudioSettings();
+            saveGameSettings();
+        }
+
+        function initSettingsPanel() {
+            const panel = document.getElementById('settings-panel');
+            const btn = document.getElementById('settings-btn');
+            if (!panel || !btn) return;
+
+            panel.innerHTML = `
+                <h3>遊戲設定</h3>
+                <div class="setting-row">
+                    <label>文字大小 <span class="val" id="val-ui-scale"></span></label>
+                    <input id="set-ui-scale" type="range" min="80" max="160" step="5" value="${Math.round(gameSettings.uiScale * 100)}">
+                </div>
+                <div class="setting-row">
+                    <label>音樂音量 <span class="val" id="val-music"></span></label>
+                    <input id="set-music" type="range" min="0" max="100" step="1" value="${gameSettings.musicVolume}">
+                </div>
+                <div class="setting-row">
+                    <label>音效音量 <span class="val" id="val-sfx"></span></label>
+                    <input id="set-sfx" type="range" min="0" max="100" step="1" value="${gameSettings.sfxVolume}">
+                </div>
+                <div class="setting-row">
+                    <label><input id="set-muted" type="checkbox" ${gameSettings.muted ? 'checked' : ''}> 靜音</label>
+                </div>
+                <button id="settings-close">關閉設定</button>
+            `;
+
+            const uiScaleEl = document.getElementById('set-ui-scale');
+            const musicEl = document.getElementById('set-music');
+            const sfxEl = document.getElementById('set-sfx');
+            const muteEl = document.getElementById('set-muted');
+            const valUi = document.getElementById('val-ui-scale');
+            const valMusic = document.getElementById('val-music');
+            const valSfx = document.getElementById('val-sfx');
+
+            const syncLabels = () => {
+                valUi.textContent = `${Math.round(gameSettings.uiScale * 100)}%`;
+                valMusic.textContent = `${gameSettings.musicVolume}%`;
+                valSfx.textContent = `${gameSettings.sfxVolume}%`;
+            };
+            syncLabels();
+
+            uiScaleEl.addEventListener('input', () => { gameSettings.uiScale = Number(uiScaleEl.value) / 100; syncLabels(); applyGameSettings(); });
+            musicEl.addEventListener('input', () => { gameSettings.musicVolume = Number(musicEl.value); syncLabels(); applyGameSettings(); });
+            sfxEl.addEventListener('input', () => { gameSettings.sfxVolume = Number(sfxEl.value); syncLabels(); applyGameSettings(); });
+            muteEl.addEventListener('change', () => { gameSettings.muted = !!muteEl.checked; applyGameSettings(); });
+
+            const closePanel = () => { panel.style.display = 'none'; };
+            document.getElementById('settings-close').addEventListener('click', closePanel);
+            btn.addEventListener('click', () => {
+                releasePointerLockForUI();
+                panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+            });
+        }
+
+        function showFinalImage(callback) {
+            if (finalImageShown) return;
+            finalImageShown = true;
+
+            // 建立全螢幕覆蓋層
+            finalImageElement = document.createElement('div');
+            finalImageElement.id = 'final-image-overlay';
+            finalImageElement.style.cssText = `
+                position: fixed; left: 0; top: 0; width: 100%; height: 100%;
+                background-color: #000; z-index: 400;
+                display: flex; align-items: center; justify-content: center;
+                opacity: 0; transition: opacity 3s ease-in-out;
+                pointer-events: none;
+            `;
+
+            const img = document.createElement('img');
+            img.src = 'images/ending/final_custom.png';
+            img.style.cssText = 'max-width: 90%; max-height: 90%; object-fit: contain;';
+            img.onerror = () => {
+                img.style.display = 'none';
+                finalImageElement.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:1.5rem;letter-spacing:4px;">就像一朵美麗的朱槿花。</div>';
+            };
+
+            finalImageElement.appendChild(img);
+            document.body.appendChild(finalImageElement);
+
+            // 淡入
+            requestAnimationFrame(() => { finalImageElement.style.opacity = '1'; });
+
+            // 停留 5 秒後淡出，再執行回調
+            setTimeout(() => {
+                finalImageElement.style.opacity = '0';
+                setTimeout(() => {
+                    if (finalImageElement) { finalImageElement.remove(); finalImageElement = null; }
+                    if (callback) callback();
+                }, 3000);
+            }, 5000);
+        }
+
+        function setupControls() {
+            const joyBase = document.getElementById('joystick-base'), joyStick = document.getElementById('joystick-stick'), halfW = window.innerWidth / 2;
+            const canvas = renderer.domElement;
+            
+            // --- 新增：指針鎖定 (Pointer Lock) ---
+            canvas.addEventListener('click', () => {
+                if (gameState === 'AWAKE') canvas.requestPointerLock();
+            });
+            
+            document.addEventListener('pointerlockchange', () => {
+                const dh = document.getElementById('desktop-hint');
+                if (document.pointerLockElement !== canvas) {
+                    dh.innerHTML = "點擊畫面以鎖定視角";
+                    dh.style.color = "#ff4444";
+                } else {
+                    dh.innerHTML = "空白鍵 / 按鈕 咳嗽<br>WASD 行走 / 凝視異常進行推論 / H 再看教學";
+                    dh.style.color = "rgba(255,255,255,0.3)";
+                }
+            });
+
+            let invertX = false, invertY = false; // 可在執行時切換
+            let mouseSens = (mouseSensitivityPreset && sensitivityOptions[mouseSensitivityPreset]) ? sensitivityOptions[mouseSensitivityPreset] : 0.12; // degrees per pixel, 可用 K/L 調整
+            
+            document.addEventListener('mousemove', (e) => {
+                if (gameState !== 'AWAKE' || document.pointerLockElement !== canvas) return;
+                const dx = invertX ? -e.movementX : e.movementX;
+                const dy = invertY ? e.movementY : -e.movementY;
+                // 使用 degrees-per-pixel 直接作用於目標角度，移除不直觀的乘 180
+                targetLon += dx * mouseSens;
+                targetLat += dy * mouseSens;
+                targetLat = Math.max(-85, Math.min(85, targetLat));
+                stationaryTimer = 0; breathPlayed = false;
+            });
+
+            document.addEventListener('touchstart', (e) => {
+                if (gameState !== 'AWAKE' || e.target.id === 'cough-btn') return;
+                for (let t of e.changedTouches) {
+                    if (t.clientX < halfW) { leftTouchId = t.identifier; leftTouchStartX = t.clientX; leftTouchStartY = t.clientY; joyBase.style.display = 'block'; joyBase.style.left = (t.clientX - 40) + 'px'; joyBase.style.top = (t.clientY - 40) + 'px'; joyStick.style.transform = `translate(-50%, -50%)`; } 
+                    else { rightTouchId = t.identifier; rightTouchStartX = t.clientX; rightTouchStartY = t.clientY; }
+                }
+            }, { passive: false });
+            document.addEventListener('touchmove', (e) => {
+                if (gameState !== 'AWAKE') return; stationaryTimer = 0; breathPlayed = false;
+                for (let t of e.changedTouches) {
+                    if (t.identifier === leftTouchId) { let dx = t.clientX - leftTouchStartX, dy = t.clientY - leftTouchStartY; const dist = Math.min(40, Math.sqrt(dx*dx + dy*dy)), angle = Math.atan2(dy, dx); joyStick.style.transform = `translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px))`; moveRight = (dx / 40) * 0.15; moveForward = -(dy / 40) * 0.15; } 
+                    else if (t.identifier === rightTouchId) { targetLon -= (t.clientX - rightTouchStartX) * 0.4; targetLat -= (t.clientY - rightTouchStartY) * 0.4; targetLat = Math.max(-85, Math.min(85, targetLat)); rightTouchStartX = t.clientX; rightTouchStartY = t.clientY; }
+                }
+            }, { passive: false });
+            const handleTouchEnd = (e) => { for (let t of e.changedTouches) { if (t.identifier === leftTouchId) { leftTouchId = null; moveForward = 0; moveRight = 0; joyBase.style.display = 'none'; } else if (t.identifier === rightTouchId) rightTouchId = null; } };
+            document.addEventListener('touchend', handleTouchEnd); document.addEventListener('touchcancel', handleTouchEnd);
+            
+            document.addEventListener('keydown', (e) => { 
+                if (keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; 
+                if (e.key.toLowerCase() === 'e') { keys.e = true; attemptTaskAction(); }
+                if (e.key.toLowerCase() === 'i') { invertY = !invertY; showEphemeralText('Invert Y: ' + invertY); }
+                if (e.key.toLowerCase() === 'o') { invertX = !invertX; showEphemeralText('Invert X: ' + invertX); }
+                if (e.key.toLowerCase() === 'k') { mouseSens = Math.min(1.0, mouseSens + 0.02); showEphemeralText('Mouse sens: ' + mouseSens.toFixed(3)); }
+                if (e.key.toLowerCase() === 'l') { mouseSens = Math.max(0.01, mouseSens - 0.02); showEphemeralText('Mouse sens: ' + mouseSens.toFixed(3)); }
+                if (e.key.toLowerCase() === 'h') { showQuickTutorial(); }
+                if (e.key.toLowerCase() === 'm') {
+                    const panel = document.getElementById('settings-panel');
+                    if (panel) {
+                        releasePointerLockForUI();
+                        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+                    }
+                }
+                if (e.key.toLowerCase() === 'b') {
+                    const go = document.getElementById('gallery-overlay');
+                    if (go && go.classList.contains('active')) GallerySystem.close();
+                    else showMemoryGallery();
+                }
+                if (e.code === 'F3') { if(!devPanel) createDevPanel(); else { devPanel.style.display = (devPanel.style.display === 'none') ? 'block' : 'none'; } }
+                if (e.code === 'Space' && (gameState === 'AWAKE' || gameState === 'COLLAPSE')) { triggerCough(); e.preventDefault(); }
+            });
+            document.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; if(e.key.toLowerCase() === 'e') keys.e = false; });
+        }
+
+        // 顯示長詩的覆蓋層
+        function showLongPoem() {
+            releasePointerLockForUI();
+            let overlay = document.getElementById('poem-overlay');
+            if (overlay) { overlay.style.display = 'flex'; return; }
+            overlay = document.createElement('div'); overlay.id = 'poem-overlay';
+            overlay.style.position = 'fixed'; overlay.style.left = '0'; overlay.style.top = '0'; overlay.style.width = '100%'; overlay.style.height = '100%';
+            overlay.style.background = 'radial-gradient(circle at 50% 25%, rgba(35,0,0,0.35) 0%, rgba(0,0,0,0.96) 45%, rgba(0,0,0,0.99) 100%)';
+            overlay.style.color = '#fff'; overlay.style.zIndex = 10000; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column'; overlay.style.alignItems = 'center'; overlay.style.padding = '28px 20px 24px'; overlay.style.overflow = 'hidden';
+
+            const shell = document.createElement('div');
+            shell.style.width = 'min(920px, 92vw)';
+            shell.style.height = '100%';
+            shell.style.display = 'flex';
+            shell.style.flexDirection = 'column';
+
+            const title = document.createElement('div');
+            title.textContent = '終章長詩';
+            title.style.color = '#ffd6d6';
+            title.style.letterSpacing = '8px';
+            title.style.fontSize = '1.15rem';
+            title.style.marginBottom = '6px';
+            title.style.textShadow = '0 0 12px rgba(255,90,90,0.35)';
+
+            const subtitle = document.createElement('div');
+            subtitle.textContent = '在失語之中，被愛';
+            subtitle.style.color = 'rgba(255,220,220,0.65)';
+            subtitle.style.letterSpacing = '3px';
+            subtitle.style.fontSize = '0.95rem';
+            subtitle.style.marginBottom = '12px';
+
+            const controls = document.createElement('div');
+            controls.style.display = 'flex';
+            controls.style.gap = '10px';
+            controls.style.flexWrap = 'wrap';
+            controls.style.marginBottom = '10px';
+
+            const mkBtn = (label) => {
+                const b = document.createElement('button');
+                b.textContent = label;
+                b.style.padding = '8px 12px';
+                b.style.background = 'rgba(25,0,0,0.8)';
+                b.style.color = '#ffe5e5';
+                b.style.border = '1px solid rgba(255,120,120,0.45)';
+                b.style.cursor = 'pointer';
+                b.style.letterSpacing = '2px';
+                return b;
+            };
+            const fullBtn = mkBtn('完整顯示');
+            const typeBtn = mkBtn('打字顯示');
+            const closeBtn = mkBtn('關閉');
+            controls.appendChild(fullBtn); controls.appendChild(typeBtn); controls.appendChild(closeBtn);
+
+            const progressWrap = document.createElement('div');
+            progressWrap.style.width = '100%';
+            progressWrap.style.height = '2px';
+            progressWrap.style.background = 'rgba(255,255,255,0.12)';
+            progressWrap.style.marginBottom = '14px';
+            const progressBar = document.createElement('div');
+            progressBar.style.width = '0%';
+            progressBar.style.height = '100%';
+            progressBar.style.background = 'rgba(255,90,90,0.9)';
+            progressBar.style.boxShadow = '0 0 12px rgba(255,60,60,0.6)';
+            progressWrap.appendChild(progressBar);
+
+            const container = document.createElement('div');
+            container.style.flex = '1';
+            container.style.overflowY = 'auto';
+            container.style.padding = '10px 10px 22px';
+            container.style.lineHeight = '1.95';
+            container.style.letterSpacing = '1.2px';
+            container.style.color = '#fff';
+            container.style.textShadow = '0 0 14px rgba(255,70,70,0.08)';
+
+            const clearTyping = () => {
+                if (overlay._typingInterval) { clearInterval(overlay._typingInterval); overlay._typingInterval = null; }
+                overlay._typing = false;
+            };
+            const closeOverlay = () => { clearTyping(); overlay.style.display = 'none'; };
+
+            const renderFull = () => {
+                clearTyping();
+                progressBar.style.width = '100%';
+                const stanzas = longPoemText.trim().split(/\n\s*\n/);
+                container.innerHTML = '';
+                stanzas.forEach((stanza, idx) => {
+                    const p = document.createElement('div');
+                    p.textContent = stanza;
+                    p.style.whiteSpace = 'pre-wrap';
+                    p.style.margin = '0 0 18px 0';
+                    p.style.opacity = '0';
+                    p.style.transform = 'translateY(5px)';
+                    p.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+                    container.appendChild(p);
+                    setTimeout(() => { p.style.opacity = '1'; p.style.transform = 'translateY(0)'; }, idx * 60);
+                });
+                typeBtn.disabled = false;
+            };
+
+            const startTyping = () => {
+                if (overlay._typing) return;
+                overlay._typing = true;
+                typeBtn.disabled = true;
+                container.innerHTML = '';
+                const pre = document.createElement('div');
+                pre.style.whiteSpace = 'pre-wrap';
+                pre.style.margin = '0';
+                container.appendChild(pre);
+                let i = 0;
+                progressBar.style.width = '0%';
+                overlay._typingInterval = setInterval(() => {
+                    pre.textContent += longPoemText[i++] || '';
+                    const pct = Math.min(100, (i / longPoemText.length) * 100);
+                    progressBar.style.width = `${pct}%`;
+                    container.scrollTop = container.scrollHeight;
+                    if (i >= longPoemText.length) {
+                        clearTyping();
+                        typeBtn.disabled = false;
+                        progressBar.style.width = '100%';
+                    }
+                }, 16);
+            };
+
+            fullBtn.addEventListener('click', renderFull);
+            typeBtn.addEventListener('click', startTyping);
+            closeBtn.addEventListener('click', closeOverlay);
+            container.addEventListener('click', () => { if (overlay._typing) renderFull(); });
+
+            shell.appendChild(title);
+            shell.appendChild(subtitle);
+            shell.appendChild(controls);
+            shell.appendChild(progressWrap);
+            shell.appendChild(container);
+            overlay.appendChild(shell);
+            document.body.appendChild(overlay);
+            renderFull();
+        }
+
+            // 記憶長廊系統（完整實作）
+            const GallerySystem = (function() {
+                const PAINTINGS = [
+                    { count: 1,  title: '孤獨的起點', yOffset: 130 },
+                    { count: 4,  title: '被注視的痕跡', yOffset: -70 },
+                    { count: 8,  title: '等待的證明', yOffset: 90 },
+                    { count: 12, title: '鏡中的反向凝視', yOffset: -110 },
+                    { count: 16, title: '無聲的呼喚', yOffset: 70 },
+                    { count: 20, title: '覺醒的淚', yOffset: -150 },
+                    { count: 26, title: '最後的朱槿花', yOffset: -20 }
+                ];
+                const hoverTexts = [
+                    "十月十四日。妳圈起了這個日期，然後忘了。",
+                    "茶還在冒煙。妳不在椅子上，圍巾還在。",
+                    "腳印停在門前。傘沒有帶走，雨也沒有。",
+                    "床底下有東西在看妳。妳知道那是妳自己。",
+                    "妳會好起來的。——安",
+                    "紅色的不是血。是妳終於願意哭出來的東西。",
+                    "門是開的。圍巾留在地上。妳沒有回頭。"
+                ];
+                const TOTAL_FRAGMENTS = 26;
+                const DOT_SPACING = 140;
+                const CARD_H_GAP = 200;
+                const GALLERY_BASE_PATH = 'images/gallery/';
+                let overlayElement = null;
+                let fullscreenElement = null;
+                let dragState = null;
+
+                function bindScrollDrag(scrollArea) {
+                    if (!scrollArea) return;
+                    let isDown = false, startX = 0, startScroll = 0;
+                    const onPointerDown = (e) => {
+                        if (e.button !== 0) return;
+                        isDown = true;
+                        startX = e.clientX;
+                        startScroll = scrollArea.scrollLeft;
+                        scrollArea.setPointerCapture(e.pointerId);
+                    };
+                    const onPointerMove = (e) => {
+                        if (!isDown) return;
+                        const dx = e.clientX - startX;
+                        scrollArea.scrollLeft = startScroll - dx;
+                    };
+                    const onPointerUp = (e) => {
+                        isDown = false;
+                        try { scrollArea.releasePointerCapture(e.pointerId); } catch (_) {}
+                    };
+                    const onWheel = (e) => {
+                        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                            e.preventDefault();
+                            scrollArea.scrollLeft += e.deltaY;
+                        }
+                    };
+                    scrollArea.addEventListener('pointerdown', onPointerDown);
+                    scrollArea.addEventListener('pointermove', onPointerMove);
+                    scrollArea.addEventListener('pointerup', onPointerUp);
+                    scrollArea.addEventListener('pointercancel', onPointerUp);
+                    scrollArea.addEventListener('wheel', onWheel, { passive: false });
+                    dragState = { scrollArea, onPointerDown, onPointerMove, onPointerUp, onWheel };
+                }
+
+                function unbindScrollDrag() {
+                    if (!dragState || !dragState.scrollArea) return;
+                    const s = dragState;
+                    s.scrollArea.removeEventListener('pointerdown', s.onPointerDown);
+                    s.scrollArea.removeEventListener('pointermove', s.onPointerMove);
+                    s.scrollArea.removeEventListener('pointerup', s.onPointerUp);
+                    s.scrollArea.removeEventListener('pointercancel', s.onPointerUp);
+                    s.scrollArea.removeEventListener('wheel', s.onWheel);
+                    dragState = null;
+                }
+
+                function initDOM() {
+                    if (document.getElementById('gallery-overlay')) return;
+                    overlayElement = document.createElement('div');
+                    overlayElement.id = 'gallery-overlay';
+                    fullscreenElement = document.createElement('div');
+                    fullscreenElement.id = 'gallery-fullscreen';
+                    const fullImg = document.createElement('img');
+                    fullImg.id = 'gallery-fullscreen-img'; fullImg.src = '';
+                    fullscreenElement.appendChild(fullImg);
+                    fullscreenElement.addEventListener('click', () => fullscreenElement.classList.remove('active'));
+                    document.body.appendChild(overlayElement);
+                    document.body.appendChild(fullscreenElement);
+                }
+
+                function render() {
+                    const currentCount = playerCognition?.collectedPoemFragments?.size || 0;
+                    const totalLineWidth = (TOTAL_FRAGMENTS - 1) * DOT_SPACING;
+                    let html = `
+                        <button class="gallery-close-btn" onclick="GallerySystem.close()">離開</button>
+                        <div id="gallery-scroll-area">
+                            <div class="corridor-bridge" style="width: calc(100vw + ${totalLineWidth + 400}px);">
+                                <div class="progress-line" style="width: ${totalLineWidth}px;">
+                    `;
+                    for(let i = 1; i <= TOTAL_FRAGMENTS; i++) {
+                        const isSpecial = PAINTINGS.some(p => p.count === i);
+                        const isLit = currentCount >= i;
+                        const dotClass = `dot ${isSpecial ? 'special' : ''} ${isLit ? 'lit' : ''}`;
+                        const xPos = (i - 1) * DOT_SPACING;
+                        html += `<div class="${dotClass}" style="left: ${xPos}px;"></div>`;
+                    }
+                    html += `</div>`;
+                    PAINTINGS.forEach((item, index) => {
+                        const isUnlocked = currentCount >= item.count;
+                        const isFinal = index === 6;
+                        const cardClass = `gallery-card ${isUnlocked ? 'unlocked' : 'locked'} ${isFinal ? 'final-card' : ''}`;
+                        const xPos = (item.count - 1) * DOT_SPACING;
+                        const topPos = `calc(45% + ${item.yOffset}px)`;
+                        const leftPos = `calc(50vw + ${xPos}px)`;
+                        const imgSrc = `${GALLERY_BASE_PATH}gallery_${String(index+1).padStart(2,'0')}.png`;
+                        const caption = hoverTexts[index] || item.title;
+                        const titleAttr = isUnlocked ? `title="${caption.replace(/"/g, '&quot;')}"` : '';
+                        html += `
+                            <div class="${cardClass}" style="left: ${leftPos}; top: ${topPos};" id="card-${index}" ${titleAttr} ${isUnlocked ? `onclick="GallerySystem.viewImage('${imgSrc}', ${index})"` : ''}>
+                                ${isUnlocked 
+                                    ? `<img src="${imgSrc}" class="gallery-img" id="img-${index}" onerror="this.parentElement.innerHTML='<div style=color:#fff;text-align:center;padding:20px;font-size:1.2rem;>${item.title}</div>'"><div class="hover-caption">${caption}</div>` 
+                                    : `<div class="locked-q">？</div>`
+                                }
+                            </div>
+                        `;
+                    });
+                    html += `</div></div>`;
+                    overlayElement.innerHTML = html;
+                }
+
+                return {
+                    open: function() {
+                        releasePointerLockForUI();
+                        initDOM(); render(); overlayElement.classList.add('active');
+                        const scrollArea = document.getElementById('gallery-scroll-area');
+                        unbindScrollDrag();
+                        if(scrollArea) {
+                            scrollArea.scrollLeft = 0;
+                            bindScrollDrag(scrollArea);
+                        }
+                        setTimeout(() => {
+                            PAINTINGS.forEach((_, i) => {
+                                const card = document.getElementById(`card-${i}`);
+                                if(card) { setTimeout(() => card.classList.add('show'), i * 800); }
+                            });
+                        }, 1000);
+                    },
+                    close: function() {
+                        if (!overlayElement) return;
+                        unbindScrollDrag();
+                        PAINTINGS.forEach((_, i) => {
+                            const card = document.getElementById(`card-${i}`);
+                            if(card) {
+                                let delay = (5 - i) * 300;
+                                if (i === 6) delay = (6 * 300) + 2000;
+                                setTimeout(() => card.classList.remove('show'), delay);
+                            }
+                        });
+                        setTimeout(() => { overlayElement.classList.remove('active'); }, (6 * 300) + 2000 + 1000);
+                    },
+                    viewImage: function(src, index) {
+                        const fullscreenImg = document.getElementById('gallery-fullscreen-img');
+                        if (fullscreenImg) {
+                            fullscreenImg.src = src;
+                            fullscreenImg.style.boxShadow = index === 6 ? '0 0 80px rgba(255,0,0,0.4)' : '0 0 40px rgba(0,0,0,0.8)';
+                            fullscreenElement.classList.add('active');
+                        }
+                    }
+                };
+            })();
+
+            function showMemoryGallery() { GallerySystem.open(); }
+
+        const clock = new THREE.Clock();
+        function animateGame() {
+            requestAnimationFrame(animateGame); const deltaTime = clock.getDelta();
+            // Final-stage short-circuit: render final cough sequence separately
+            if (finalCoughActive) {
+                if (shakeIntensity > 0) {
+                    camera.position.x += (Math.random() - 0.5) * shakeIntensity * 0.5;
+                    camera.position.y += (Math.random() - 0.5) * shakeIntensity * 0.5;
+                    camera.position.z += (Math.random() - 0.5) * shakeIntensity * 0.5;
+                    shakeIntensity -= 0.05; if (shakeIntensity <= 0) { shakeIntensity = 0; camera.position.y = 0; }
+                }
+                // 更新終幕血粒子
+                for (let j = finalBloodParticles.length - 1; j >= 0; j--) {
+                    const sys = finalBloodParticles[j], pos = sys.mesh.geometry.attributes.position.array;
+                    for (let i = 0; i < pos.length / 3; i++) {
+                        if (pos[i*3+1] > -50) {
+                            pos[i*3] += sys.vels[i].x; pos[i*3+1] += sys.vels[i].y; pos[i*3+2] += sys.vels[i].z; sys.vels[i].y -= 0.02;
+                            let hit = false, isWall = false;
+                            if (pos[i*3+1] <= -9.9) { hit = true; pos[i*3+1] = -9.9; }
+                            else if (Math.abs(pos[i*3]) >= 19.8) { hit = true; pos[i*3] = Math.sign(pos[i*3]) * 19.8; isWall = true; }
+                            else if (Math.abs(pos[i*3+2]) >= 19.8) { hit = true; pos[i*3+2] = Math.sign(pos[i*3+2]) * 19.8; isWall = true; }
+                            if (hit) { createBloodStroke(new THREE.Vector3(pos[i*3], pos[i*3+1], pos[i*3+2]), false, isWall); pos[i*3+1] = -100; }
+                        }
+                    }
+                    sys.mesh.geometry.attributes.position.needsUpdate = true; sys.life--;
+                    if (sys.life <= 0) { scene.remove(sys.mesh); finalBloodParticles.splice(j, 1); }
+                }
+                // 固定視角
+                phi = THREE.MathUtils.degToRad(90 - lat); theta = THREE.MathUtils.degToRad(lon);
+                const target = new THREE.Vector3(Math.sin(phi)*Math.cos(theta), Math.cos(phi), Math.sin(phi)*Math.sin(theta));
+                resolvePlayerColliderOverlap();
+                camera.lookAt(target.add(camera.position)); updateCorridorVisibility(); renderer.render(scene, camera); return;
+            }
+            // 若 dreamPhase 正在進行，減少輸入與顯示（簡單實作）
+            if (dreamPhase) {
+                // 夢境期間暫停主要互動，10 秒後結束
+                // 這裡僅示意：若需要更完整的 dreamSceneGroup，可再擴充
+            }
+
+            if (gameState === 'AWAKE' || gameState === 'SLEEPING' || gameState === 'ENDING' || gameState === 'COLLAPSE') {
+                if (weaknessTimer > 0) weaknessTimer -= deltaTime;
+                
+                // 更接近 FPS 的直接旋轉感：當正常 Awake 時使用高 lerp（接近 1）以減少平滑延遲
+                const lerp = (weaknessTimer > 0 || isCollapsing) ? 0.02 : 0.9; 
+                lon += (targetLon - lon) * lerp; lat += (targetLat - lat) * lerp;
+                phi = THREE.MathUtils.degToRad(90 - lat); theta = THREE.MathUtils.degToRad(lon);
+                const target = new THREE.Vector3(Math.sin(phi)*Math.cos(theta), Math.cos(phi), Math.sin(phi)*Math.sin(theta));
+                
+                if (gameState === 'AWAKE') {
+                    let cFwd = moveForward, cRgt = moveRight;
+                    if (keys.w) cFwd = 0.15; if (keys.s) cFwd = -0.15; if (keys.a) cRgt = -0.15; if (keys.d) cRgt = 0.15;
+                    if (weaknessTimer > 0) { cFwd *= 0.5; cRgt *= 0.5; }
+                    
+                    if (cFwd !== 0 || cRgt !== 0) { 
+                        stationaryTimer = 0; breathPlayed = false;
+                        const forward = new THREE.Vector3(target.x, 0, target.z).normalize();
+                        const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), forward).normalize();
+                        const step = forward.multiplyScalar(cFwd).add(right.multiplyScalar(-cRgt));
+                        let nextX = camera.position.x + step.x;
+                        let nextZ = camera.position.z + step.z;
+
+                        // 支援沿邊滑動：先嘗試完整位移，失敗再拆軸
+                        if (!isPositionBlocked(nextX, nextZ)) {
+                            camera.position.x = nextX;
+                            camera.position.z = nextZ;
+                        } else {
+                            if (!isPositionBlocked(nextX, camera.position.z)) camera.position.x = nextX;
+                            if (!isPositionBlocked(camera.position.x, nextZ)) camera.position.z = nextZ;
+                        }
+
+                        const bound = 18;
+                        camera.position.x = Math.max(-bound, Math.min(bound, camera.position.x));
+                        camera.position.z = Math.max(-bound, Math.min(bound, camera.position.z));
+                    } else {
+                        stationaryTimer += deltaTime;
+                        if(stationaryTimer > 15.0 && !breathPlayed) { AudioEngine.playBreath(); breathPlayed = true; }
+                        if(stationaryTimer > 30.0) { unlockPoemFragment('P25'); }
+                    }
+
+                    checkInteractions(deltaTime);
+                    updateAnReaction();
+                    
+                    if(playerCognition.activeDelusions.length > 0 && Math.random() < 0.002) { 
+                        const fh=document.getElementById('fake-hint'); 
+                        fh.innerText = Math.random() > 0.5 ? "茶收到了嗎？" : "快了，再一下。"; 
+                        fh.style.opacity='1'; 
+                        document.getElementById('canvas-container').classList.add('fake-flash');
+                        setTimeout(() => { 
+                            fh.style.opacity='0'; 
+                            document.getElementById('canvas-container').classList.remove('fake-flash');
+                        }, 2000); 
+                    }
+                }
+
+                if (gameState === 'COLLAPSE') {
+                    collapseTimer -= deltaTime;
+                    roomLines.forEach((l, idx) => {
+                        if(!l) return; const pos = l.geometry.attributes.position.array; const orig = roomOrigVerts[idx];
+                        for(let i=0; i<pos.length; i+=3){ pos[i]=orig[i]+Math.sin(Date.now()*0.005 + pos[i+1])*0.5; pos[i+1]=orig[i+1]+Math.cos(Date.now()*0.004)*0.2; pos[i+2]=orig[i+2]+Math.sin(Date.now()*0.006)*0.5; }
+                        l.geometry.attributes.position.needsUpdate = true; l.material.color.setHex(0xffaaaa);
+                    });
+                    if (collapseTimer <= 0) {
+                        isCollapsing = false; gameState = 'AWAKE'; 
+                        
+                        // 新增：崩壞結束的喘息引導
+                        AudioEngine.startHeartbeat(1.2); setTimeout(()=>AudioEngine.stopHeartbeat(), 1500);
+                        
+                        document.getElementById('ui-layer').style.display='flex'; document.getElementById('reticle').style.display='block';
+                        const dh = document.getElementById('desktop-hint');
+                        dh.innerHTML = '<span style="color:#ff4444; text-shadow: 0 0 5px red; font-size: 1.1rem; letter-spacing: 2px;">它聽見妳了。繼續嗎？</span>';
+                        setTimeout(() => { dh.innerHTML = "空白鍵 / 按鈕 咳嗽<br>WASD 行走 / 點擊畫面鎖定視角 / 凝視異常進行推論 / H 再看教學"; dh.style.color = "rgba(255,255,255,0.3)"; }, 3000);
+                        
+                        roomLines.forEach((l, idx) => { if(l){ l.material.color.setHex(0xffffff); const pos=l.geometry.attributes.position.array; const orig=roomOrigVerts[idx]; for(let i=0;i<pos.length;i++){ pos[i]=orig[i]+(Math.random()-0.5)*0.2; } l.geometry.attributes.position.needsUpdate=true; } });
+                        updateMusicForState();
+                        unlockPoemFragment('P08');
+                    }
+                }
+
+                camera.lookAt(target.add(camera.position));
+                resolvePlayerColliderOverlap();
+                updateCorridorVisibility();
+                if(playerShadow) { playerShadow.position.x = camera.position.x; playerShadow.position.z = camera.position.z; }
+                if (shakeIntensity > 0) { camera.position.x += (Math.random()-0.5)*shakeIntensity; camera.position.y += (Math.random()-0.5)*shakeIntensity; camera.position.z += (Math.random()-0.5)*shakeIntensity; shakeIntensity -= 0.05; if (shakeIntensity <= 0) { shakeIntensity = 0; camera.position.y = 0; } }
+
+                for (let j = activeBlood.length - 1; j >= 0; j--) {
+                    const sys = activeBlood[j], pos = sys.mesh.geometry.attributes.position.array; let active = false;
+                    for (let i = 0; i < pos.length / 3; i++) {
+                        if (pos[i*3+1] > -50) {
+                            active = true; pos[i*3] += sys.vels[i].x; pos[i*3+1] += sys.vels[i].y; pos[i*3+2] += sys.vels[i].z; sys.vels[i].y -= 0.015;
+                            let hit = false, isWall = false;
+                            if (pos[i*3+1] <= -9.9) { hit = true; pos[i*3+1] = -9.9; } else if (Math.abs(pos[i*3]) >= 19.8) { hit = true; pos[i*3] = Math.sign(pos[i*3])*19.8; isWall = true; } else if (Math.abs(pos[i*3+2]) >= 19.8) { hit = true; pos[i*3+2] = Math.sign(pos[i*3+2])*19.8; isWall = true; }
+                            if (hit) { createBloodStroke(new THREE.Vector3(pos[i*3], pos[i*3+1], pos[i*3+2]), false, isWall); pos[i*3+1] = -100; }
+                        }
+                    }
+                    sys.mesh.geometry.attributes.position.needsUpdate = true; sys.life--;
+                    if(sys.life <= 0) { scene.remove(sys.mesh); activeBlood.splice(j, 1); }
+                }
+                if (devPanel) updateDevPanel();
+                renderer.render(scene, camera);
+            }
+        }
+    </script>
+</body>
+</html>
+
