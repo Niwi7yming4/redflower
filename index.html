@@ -29,6 +29,19 @@
         #cough-btn:active { background: rgba(180, 0, 0, 0.3); border-color: #ff2222; color: #ff2222; transform: scale(0.95); }
         
         #reticle { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; background: rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; transition: all 0.2s; display: none; }
+        /* 新增：常駐準星的呼吸動畫 */
+        .reticle-steady {
+            display: block !important;
+            width: 8px;
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            animation: breathe-reticle 4s ease-in-out infinite;
+        }
+        @keyframes breathe-reticle {
+            0%,100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.15); }
+        }
         #gaze-progress { position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; border: 2px solid transparent; border-top-color: #ff0000; border-radius: 50%; transform: translate(-50%, -50%) rotate(0deg); z-index: 9; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
         
         #interaction-hint { position: absolute; top: 55%; width: 100%; text-align: center; color: rgba(255, 255, 255, 0.8); font-size: 1.05rem; letter-spacing: 2px; opacity: 0; transition: opacity 0.3s; z-index: 10; pointer-events: none; text-shadow: 0 0 5px #000; }
@@ -38,10 +51,6 @@
         #reckoning-text { position: absolute; top: 70%; width: 100%; text-align: center; color: #ff0000; font-size: 1.5rem; letter-spacing: 10px; opacity: 0; transition: opacity 0.2s; z-index: 160; pointer-events: none; font-weight: bold; text-shadow: 0 0 15px rgba(255,0,0,0.8); font-family: "MingLiU", serif; }
 
         .desktop-hint { position: absolute; top: 5%; left: 5%; color: rgba(255,255,255,0.3); font-family: sans-serif; font-size: 0.95rem; z-index: 10; display: none; transition: all 0.3s;}
-        #task-panel { position: absolute; left: 5%; top: 15%; width: min(430px, 86vw); z-index: 30; background: linear-gradient(180deg, rgba(20,0,0,0.86), rgba(0,0,0,0.78)); border: 1px solid rgba(255,110,110,0.42); color: #ffdede; padding: 10px 12px; line-height: 1.55; letter-spacing: 1px; display: none; }
-        #task-day { color: #ffb8b8; font-size: 0.95rem; margin-bottom: 4px; letter-spacing: 2px; }
-        #task-diary { color: rgba(255,235,235,0.86); font-size: 0.9rem; margin-bottom: 6px; white-space: pre-wrap; }
-        #task-objective { color: #ffaaaa; font-size: 0.9rem; white-space: pre-wrap; }
         #tutorial-card { position: absolute; right: 4%; top: 7%; max-width: min(430px, 80vw); background: linear-gradient(180deg, rgba(20,0,0,0.84), rgba(0,0,0,0.75)); border: 1px solid rgba(255,90,90,0.45); box-shadow: 0 0 25px rgba(255,0,0,0.15); color: rgba(255,235,235,0.95); z-index: 25; padding: 14px 18px; letter-spacing: 1px; line-height: 1.65; font-size: 1rem; opacity: 0; transform: translateY(-8px); pointer-events: none; transition: opacity 0.6s ease, transform 0.6s ease; }
         #tutorial-card.show { opacity: 1; transform: translateY(0); }
         #settings-btn { position: absolute; right: 4%; top: 4%; z-index: 35; background: rgba(20,0,0,0.75); color: #ffdede; border: 1px solid rgba(255,120,120,0.55); padding: 8px 14px; letter-spacing: 2px; cursor: pointer; font-family: inherit; display: none; }
@@ -73,16 +82,86 @@
         /* 假回饋與碎片化提示 UI */
         #fake-hint { position: absolute; top: 30%; width: 100%; text-align: center; color: rgba(255,255,255,0.8); font-size: 1.2rem; letter-spacing: 6px; z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.5s; font-style: italic; text-shadow: 0 0 8px rgba(255,0,0,0.6); }
         #ephemeral-text { position: absolute; bottom: 15%; right: 10%; color: #ff0000; font-size: 0.9rem; letter-spacing: 2px; opacity: 0; transition: opacity 0.5s; z-index: 150; pointer-events: none; }
+
+        /* 咳嗽字幕位置：移至畫面中央準星上方一點（相對於準星） */
+        #cough-sub { position: fixed; left: 50%; top: 46%; transform: translate(-50%, -120%); color: #ff4444; font-size: 1rem; letter-spacing: 1px; opacity: 0; transition: opacity 0.25s ease, transform 0.12s; z-index: 10060; pointer-events: none; text-shadow: 0 0 8px rgba(255,0,0,0.55); background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,80,80,0.12); font-weight: 600; will-change: transform; }
+        @keyframes coughGlitch {
+            0% { transform: translate(0,0) scale(1); }
+            25% { transform: translate(-2px, -1px) scale(1.02); }
+            50% { transform: translate(1px, 1px) scale(0.995); }
+            75% { transform: translate(-1px, 2px) scale(1.01); }
+            100% { transform: translate(0,0) scale(1); }
+        }
+        .cough-glitch { animation: coughGlitch 0.12s ease-in-out 4; }
         
         /* 碎片進度計數器 - 常駐但低透明度 */
         #fragment-counter { position: absolute; bottom: 5%; left: 5%; color: #cc4444; font-size: 0.8rem; letter-spacing: 2px; opacity: 0.3; transition: opacity 0.5s; z-index: 10; pointer-events: none; font-family: monospace; text-shadow: 0 0 5px rgba(255,0,0,0.3); }
+
+        /* 針對動態浮層確保不會攔截滑鼠事件（以防遺漏） */
+        #cough-sub, #fake-hint, #ephemeral-text, #reckoning-text, #interaction-hint, #fragment-counter, #diegetic-note, #chromatic-layer { pointer-events: none; }
+
+        /* diegetic note (in-world sticky note rendered in screen space) */
+        #diegetic-note {
+            position: fixed;
+            bottom: 12%;
+            left: 12%;
+            background: rgba(255, 248, 220, 0.08);
+            color: rgba(255, 220, 180, 0.9);
+            font-family: "Kaiti", "MingLiU", serif;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            line-height: 1.8;
+            padding: 12px 16px;
+            border-left: 2px solid rgba(180, 100, 80, 0.4);
+            text-shadow: 0 0 8px rgba(255,100,50,0.3);
+            backdrop-filter: blur(1px);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.6s ease, transform 0.6s ease;
+            transform: rotate(-1deg);
+            z-index: 30;
+        }
+        #diegetic-note.visible { opacity: 1; transform: rotate(0deg); }
+
+        /* chromatic aberration layer for gaze intensity */
+        #chromatic-layer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 6;
+            mix-blend-mode: screen;
+            background: transparent;
+            transition: box-shadow 0.3s ease;
+        }
+
+        /* fragment counter whisper state */
+        #fragment-counter.whisper {
+            opacity: 0.85;
+            transform: translateY(0px);
+            transition: opacity 1.2s ease, transform 1.5s ease;
+        }
         
         .ghost-room-effect { filter: contrast(1.5) drop-shadow(0 0 10px rgba(255,0,0,0.3)); animation: glitch-anim 0.2s 5; }
         .fake-flash { animation: inset-red-flash 0.8s ease-out; }
+
+        /* 睡前進度提示文字 */
+        #sleep-hint { position: absolute; bottom: 22%; left: 50%; transform: translateX(-50%); color: rgba(180,30,30,0.95); font-size: 1rem; opacity: 0; transition: opacity 0.4s ease; z-index: 170; pointer-events: none; font-weight: 600; letter-spacing: 2px; }
         
         @keyframes glitch-anim { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 60% { transform: translate(2px, 2px) } 80% { transform: translate(2px, -2px) } 100% { transform: translate(0) } }
         @keyframes inset-red-flash { 0% { box-shadow: inset 0 0 80px rgba(255,0,0,0.5); background-color: rgba(255,255,255,0.05); } 100% { box-shadow: inset 0 0 0 rgba(255,0,0,0); background-color: transparent; } }
-    </style>
+        #flower-symbol {
+            position: fixed;
+            bottom: 10%;
+            right: 8%;
+            z-index: 20;
+            pointer-events: none;
+            transition: all 0.5s ease;
+            opacity: 0.9;
+        }
+
+        #flower-symbol svg path { transition: transform 0.3s ease, fill 0.3s ease; transform-origin: 50% 50%; }
+        </style>
 
     <style>
     /* =========================================
@@ -234,11 +313,6 @@
     <div id="canvas-container"></div>
     <div id="vignette"></div>
     <div class="desktop-hint" id="desktop-hint">空白鍵 / 按鈕 咳嗽<br>WASD 行走 / 點擊畫面鎖定視角 / 凝視異常進行推論 / H 再看教學</div>
-    <div id="task-panel">
-        <div id="task-day"></div>
-        <div id="task-diary"></div>
-        <div id="task-objective"></div>
-    </div>
     <button id="settings-btn">設定 (M)</button>
     <div id="settings-panel"></div>
     <div id="joystick-base"><div id="joystick-stick"></div></div>
@@ -252,8 +326,11 @@
     
     <div id="fake-hint"></div>
     <div id="ephemeral-text"></div>
+    <div id="cough-sub"></div>
     <!-- 碎片進度初始化 -->
     <div id="fragment-counter">&lt;記憶碎片：0/26&gt;</div>
+    <div id="diegetic-note" aria-hidden="true"></div>
+    <div id="chromatic-layer" aria-hidden="true"></div>
 
     <div id="ui-layer"><button id="cough-btn">咳 嗽</button></div>
 
@@ -267,9 +344,21 @@
         <div id="day-title">Day 1</div>
         <div id="sleep-progress-container"><div id="sleep-progress-bar"></div></div>
     </div>
+    <div id="sleep-hint"></div>
     <div id="wake-flash"></div>
     
     <div id="ending-screen"><div id="ending-text"></div></div>
+    <div id="flower-symbol">
+        <svg viewBox="0 0 100 100" width="60" height="60" aria-hidden="true">
+            <g id="flower-petals">
+                <path d="M50,50 L50,20 Q40,30 50,50" fill="#ff4444" opacity="0.9" transform="translate(0,0)" />
+                <path d="M50,50 L80,35 Q70,40 50,50" fill="#ff4444" opacity="0.9" transform="translate(0,0)" />
+                <path d="M50,50 L70,75 Q60,60 50,50" fill="#ff4444" opacity="0.9" transform="translate(0,0)" />
+                <path d="M50,50 L30,75 Q40,60 50,50" fill="#ff4444" opacity="0.9" transform="translate(0,0)" />
+                <path d="M50,50 L20,35 Q30,40 50,50" fill="#ff4444" opacity="0.9" transform="translate(0,0)" />
+            </g>
+        </svg>
+    </div>
     
     <style id="ui-scaling">
         /* 增大常用 UI 文字，改善可讀性 */
@@ -288,6 +377,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
+        const SOUND_BUFFER_DURATION = 0.2;
         const AudioEngine = {
             ctx: null, heartbeatOsc: null, heartbeatGain: null, droneOsc: null, droneGain: null,
             sfxVolume: 1.0,
@@ -401,11 +491,17 @@
                 const noiseGain = this.ctx.createGain();
                 noiseGain.gain.setValueAtTime(0.3 * intensity * this.sfxVolume, now);
                 noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-                
+
+                // 加入低通濾波模擬痰音質感
+                const lowpass = this.ctx.createBiquadFilter();
+                lowpass.type = 'lowpass';
+                lowpass.frequency.value = 700 + Math.random() * 300;
+                lowpass.Q.value = 1.5;
+
                 osc1.connect(gain1).connect(this.ctx.destination);
                 osc2.connect(gain2).connect(this.ctx.destination);
-                noise.connect(noiseGain).connect(this.ctx.destination);
-                
+                noise.connect(lowpass); lowpass.connect(noiseGain); noiseGain.connect(this.ctx.destination);
+
                 osc1.start(now); osc1.stop(now + duration);
                 osc2.start(now); osc2.stop(now + duration);
                 noise.start(now); noise.stop(now + duration);
@@ -429,6 +525,7 @@
            ========================================= */
         const MusicEngine = {
             ctx: null,
+            pendingTimers: [],
             masterGain: null,
             currentTrack: null,
             currentVariation: 0,
@@ -549,6 +646,8 @@
                 const octaveShift = variationData.octaveShift || 0;
                 let time = 0;
 
+                // clear any pending timers from previous sequences
+                this.clearAllTimers();
                 this.stop();
                 // 音量淡入：確保 masterGain 存在並從 0 淡入到 baseVolume
                 if (!this.masterGain && this.ctx) { this.masterGain = this.ctx.createGain(); this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime); this.masterGain.connect(this.ctx.destination); }
@@ -570,7 +669,11 @@
                     const freq = this.freq[note];
                     const duration = (dur / tempo) * 0.5; // 每單位 0.5 秒
                     this.playNote(freq, duration, waveform, gain, octaveShift);
-                    this.timer = setTimeout(playNext, duration * 1000);
+                    // ensure any previous timer is cleared before scheduling next to avoid races
+                    if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+                    const t = setTimeout(playNext, duration * 1000);
+                    this.pendingTimers.push(t);
+                    this.timer = t;
                 };
 
                 this.notes = notes.slice();
@@ -596,14 +699,25 @@
 
             stop() {
                 this.isPlaying = false;
-                if (this.timer) clearTimeout(this.timer);
+                this.clearAllTimers();
                 this.notes = [];
             },
 
             switchVariation(variationIndex) {
                 if (this.currentTrack) {
+                    this.clearAllTimers();
                     this.play(this.currentTrack, variationIndex);
                 }
+            }
+            ,
+            clearAllTimers() {
+                try {
+                    if (this.pendingTimers && this.pendingTimers.length) {
+                        this.pendingTimers.forEach(t => clearTimeout(t));
+                        this.pendingTimers = [];
+                    }
+                    if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+                } catch (e) {}
             }
         };
 
@@ -649,6 +763,8 @@
         // --- 情感核心系統（新增全域變數）
         // 情感核心數值（隱藏，不顯示 UI）
         let acceptance = 50; // 0~100，起始中立，>70 偏向接受，<40 偏向封閉
+        // 供視覺化用的平滑相位狀態（避免直接使用高頻隨機導致眼睛不適）
+        let acceptanceAnim = { phase: 0 };
 
         // 線索鎖死記錄：當玩家過度咳血在誤解物件上，永久禁止該線索的正確版本
         const lockedClues = new Set();
@@ -662,7 +778,7 @@
         let lastCoughTime = 0; // 上次咳嗽的時間（ms）
 
         // 視角靈敏度預設（若為 null，開場會提示玩家選擇）
-        const sensitivityOptions = { low: 0.04, medium: 0.12, high: 0.24 };
+            const sensitivityOptions = { low: 0.04, medium: 0.12, high: 0.24, custom: 0.12 };
         let mouseSensitivityPreset = null; // 'low'|'medium'|'high' 或 null 未選
 
         // 記憶夢境觸發標記
@@ -672,6 +788,8 @@
         // 鏡子顯示與凝視計時
         let mirrorPlane = null;
         let mirrorPlaneMat = null;
+        // 雙圖貼圖容器（normal: 背影, cry: 哭泣）
+        let mirrorTextures = { normal: null, cry: null };
         let mirrorGazeTimer = 0;
         const MIRROR_FADE_SPEED = 0.6; // multiplier for fade-in speed
         const dailyTasks = {
@@ -784,6 +902,39 @@
             } else if (acceptance < 40) {
                 curtainMesh.position.z = 19.2;
             }
+        }
+
+        // Diegetic note (soft task note in screen space)
+        function updateDiegeticNote() {
+            const note = document.getElementById('diegetic-note');
+            if (!note) return;
+            if (!currentDailyTask) {
+                note.classList.remove('visible');
+                return;
+            }
+            note.innerHTML = `<div style="opacity:0.9;">${currentDailyTask.diary}</div><div style="margin-top:6px; opacity:0.85;">✦ ${currentDailyTask.objective}</div>`;
+            note.classList.add('visible');
+        }
+
+        // Chromatic aberration / color bleed layer based on gaze intensity
+        function updateChromaticAberration() {
+            const layer = document.getElementById('chromatic-layer');
+            if (!layer) return;
+            let maxProgress = 0;
+            let maxTHRESH = 1;
+            const clues = Object.values(emotionalClues || {});
+            for (let c of clues) {
+                if (c && c.inspectProgress > maxProgress) {
+                    maxProgress = c.inspectProgress;
+                    maxTHRESH = c.THRESH || 1;
+                }
+            }
+            const intensity = Math.min(1, maxProgress / maxTHRESH);
+            const offset = intensity * 6;
+            layer.style.boxShadow = `
+                inset ${offset}px 0 0 rgba(255,0,0,${intensity * 0.3}),
+                inset ${-offset}px 0 0 rgba(0,255,255,${intensity * 0.2})
+            `;
         }
 
         function startDreamScene(duration = 10000, cb = null) {
@@ -1036,9 +1187,33 @@
             unlockPoemFragment('P18');
         }
 
+        // 咳嗽時顯示右下紅色內心字幕（隨機）
+        let coughSubTimer = null;
+        function showCoughSubtitleOnce() {
+            const el = document.getElementById('cough-sub'); if (!el) return;
+            const options = [
+                '我的頭好像...有點暈',
+                '是...低血糖嗎',
+                '嘶...我到底在幹嘛'
+            ];
+            const txt = options[Math.floor(Math.random() * options.length)];
+            el.innerText = txt; el.style.opacity = '1';
+            // 觸發短暫的輕微抖動（glitch-like）動畫
+            try { el.classList.remove('cough-glitch'); } catch(e){}
+            // force reflow to restart animation
+            void el.offsetWidth;
+            el.classList.add('cough-glitch');
+            // 移除動畫 class（在短抖動結束後）
+            setTimeout(() => { try { el.classList.remove('cough-glitch'); } catch(e){} }, 600);
+            if (coughSubTimer) clearTimeout(coughSubTimer);
+            coughSubTimer = setTimeout(() => { el.style.opacity = '0'; coughSubTimer = null; }, 3500);
+        }
+
         function triggerUncertainty(clue) {
-            document.getElementById('canvas-container').classList.add('ghost-room-effect');
-            setTimeout(() => document.getElementById('canvas-container').classList.remove('ghost-room-effect'), 1000);
+            if (!gameSettings || !gameSettings.comfortMode) {
+                document.getElementById('canvas-container').classList.add('ghost-room-effect');
+                setTimeout(() => document.getElementById('canvas-container').classList.remove('ghost-room-effect'), 1000);
+            }
 
             clue.isActive = false;
             clue.delusionCount = 0;
@@ -1071,14 +1246,22 @@
         }
 
         function unlockPoemFragment(id) {
-            if(!playerCognition.collectedPoemFragments.has(id)) {
+            if (!playerCognition.collectedPoemFragments.has(id)) {
                 playerCognition.collectedPoemFragments.add(id);
                 showEphemeralText("……");
-                
                 const counter = document.getElementById('fragment-counter');
-                counter.innerText = `<記憶碎片：${playerCognition.collectedPoemFragments.size}/26>`;
-                counter.style.opacity = '1';
-                setTimeout(() => counter.style.opacity = '0.3', 2500);
+                const whispers = [
+                    "某個角落…又多了一點重量。",
+                    "紅花看見了。",
+                    "不是記憶，是回聲。",
+                    "妳在拼湊什麼？"
+                ];
+                const msg = whispers[Math.floor(Math.random() * whispers.length)];
+                counter.innerText = `「${msg}」　　${playerCognition.collectedPoemFragments.size}/26`;
+                counter.classList.add('whisper');
+                counter.style.opacity = '0.85';
+                clearTimeout(counter._whisperTimer);
+                counter._whisperTimer = setTimeout(() => { counter.classList.remove('whisper'); counter.style.opacity = '0.3'; }, 4000);
             }
         }
 
@@ -1358,7 +1541,25 @@
                 btnContainer.appendChild(btn);
             });
 
-            overlay.appendChild(title); overlay.appendChild(btnContainer); document.body.appendChild(overlay);
+            // 微調滑鼠靈敏度（自訂值）
+            const fineWrap = document.createElement('div'); fineWrap.style.marginTop = '18px'; fineWrap.style.textAlign = 'center';
+            const fineLabel = document.createElement('div'); fineLabel.textContent = '微調靈敏度（精細）'; fineLabel.style.color = '#fff'; fineLabel.style.marginBottom = '8px';
+            const fineControl = document.createElement('div'); fineControl.style.display = 'flex'; fineControl.style.gap = '8px'; fineControl.style.alignItems = 'center'; fineControl.style.justifyContent = 'center';
+            const slider = document.createElement('input'); slider.type = 'range'; slider.min = '0.02'; slider.max = '0.36'; slider.step = '0.01'; slider.value = (sensitivityOptions.custom || 0.12).toString();
+            slider.style.width = '220px';
+            const valDisplay = document.createElement('div'); valDisplay.textContent = parseFloat(slider.value).toFixed(2); valDisplay.style.color = '#fff'; valDisplay.style.minWidth = '48px';
+            slider.addEventListener('input', (e) => { sensitivityOptions.custom = parseFloat(e.target.value); valDisplay.textContent = sensitivityOptions.custom.toFixed(2); });
+            const useCustom = document.createElement('button'); useCustom.textContent = '使用此靈敏度'; useCustom.style.padding = '8px 12px'; useCustom.style.background = '#113'; useCustom.style.color = '#fff'; useCustom.style.border = '1px solid #226'; useCustom.style.cursor = 'pointer';
+            useCustom.addEventListener('click', () => {
+                mouseSensitivityPreset = 'custom';
+                document.body.removeChild(overlay);
+                introScreen.style.opacity = '0';
+                setTimeout(() => { introScreen.style.visibility = 'hidden'; cancelAnimationFrame(introAnimFrame); if (!scene) initGame(); }, 2000);
+            });
+            fineControl.appendChild(slider); fineControl.appendChild(valDisplay); fineControl.appendChild(useCustom);
+            fineWrap.appendChild(fineLabel); fineWrap.appendChild(fineControl);
+
+            overlay.appendChild(title); overlay.appendChild(btnContainer); overlay.appendChild(fineWrap); document.body.appendChild(overlay);
         }
         introScreen.addEventListener('click', () => {
             AudioEngine.init();
@@ -1387,6 +1588,11 @@
         let hasAnyReckoningOccurred = false, coughedAfterReckoning = false, isCollapsing = false, collapseTimer = 0;
 
         let lon = 90, lat = 0, phi = 0, theta = 0, targetLon = 90, targetLat = 0;
+        // Accumulated raw mouse deltas (consumed each rAF) to avoid per-event clipping jitter
+        let rawMouseDX = 0, rawMouseDY = 0;
+        // Global invert flags and sensitivity so animateGame can use them
+        let invertX = false, invertY = false;
+        let mouseSens = (mouseSensitivityPreset && sensitivityOptions[mouseSensitivityPreset]) ? sensitivityOptions[mouseSensitivityPreset] : 0.12;
         let moveForward = 0, moveRight = 0, stationaryTimer = 0, breathPlayed = false;
         const keys = { w:false, a:false, s:false, d:false };
         
@@ -1399,6 +1605,17 @@
         const PLAYER_COLLIDER_RADIUS = 0.7;
         let playerShadow, ribsGroup; 
         let shakeIntensity = 0, gazeTimer = 0, weaknessTimer = 0, letterReadTimer = 0;
+        let reduceShakeGlobal = false;
+        // Helper to request camera shake while respecting user 'reduceShake' setting
+        function requestShake(value, ensureMin = false) {
+            const cap = reduceShakeGlobal ? 0.3 : Infinity;
+            const effective = Math.min(value, cap);
+            if (ensureMin) {
+                shakeIntensity = Math.max(shakeIntensity, effective);
+            } else {
+                shakeIntensity = effective;
+            }
+        }
         // Final-stage variables for Day 7 ending sequence
         let finalCoughActive = false;
         let finalCoughInterval = null;
@@ -1406,6 +1623,7 @@
         let finalCoughStartTime = 0;
         const FINAL_COUGH_DURATION = 20000;
         let finalBloodParticles = [];
+        let finalBloomParticles = [];
         let finalLine1El = null, finalLine2El = null, finalLine3El = null;
         // Final image overlay state
         let finalImageShown = false;
@@ -1438,34 +1656,42 @@
 
         function resolvePlayerColliderOverlap() {
             if (!camera) return;
+            const maxIterations = 5;
+            const bound = 18;
             let x = camera.position.x;
             let z = camera.position.z;
 
-            for (let pass = 0; pass < 3; pass++) {
-                let moved = false;
+            for (let pass = 0; pass < maxIterations; pass++) {
+                let hasOverlap = false;
+
                 for (const c of solidColliders) {
                     const minX = c.minX - PLAYER_COLLIDER_RADIUS;
                     const maxX = c.maxX + PLAYER_COLLIDER_RADIUS;
                     const minZ = c.minZ - PLAYER_COLLIDER_RADIUS;
                     const maxZ = c.maxZ + PLAYER_COLLIDER_RADIUS;
+
                     if (x > minX && x < maxX && z > minZ && z < maxZ) {
-                        const dLeft = Math.abs(x - minX);
-                        const dRight = Math.abs(maxX - x);
-                        const dBack = Math.abs(z - minZ);
-                        const dFront = Math.abs(maxZ - z);
-                        const m = Math.min(dLeft, dRight, dBack, dFront);
+                        // find smallest push distance
+                        const dists = [
+                            { v: 'left',  d: x - minX },
+                            { v: 'right', d: maxX - x },
+                            { v: 'back',  d: z - minZ },
+                            { v: 'front', d: maxZ - z }
+                        ];
+                        dists.sort((a,b) => a.d - b.d);
+                        const closest = dists[0];
                         const eps = 0.03;
-                        if (m === dLeft) x = minX - eps;
-                        else if (m === dRight) x = maxX + eps;
-                        else if (m === dBack) z = minZ - eps;
+                        if (closest.v === 'left') x = minX - eps;
+                        else if (closest.v === 'right') x = maxX + eps;
+                        else if (closest.v === 'back') z = minZ - eps;
                         else z = maxZ + eps;
-                        moved = true;
+                        hasOverlap = true;
                     }
                 }
-                if (!moved) break;
+
+                if (!hasOverlap) break;
             }
 
-            const bound = 18;
             camera.position.x = Math.max(-bound, Math.min(bound, x));
             camera.position.z = Math.max(-bound, Math.min(bound, z));
         }
@@ -1476,18 +1702,6 @@
             corridorPreviewLines.forEach(line => { if (line) line.visible = shouldShow; });
         }
 
-        function updateTaskPanel() {
-            const panel = document.getElementById('task-panel');
-            const dayEl = document.getElementById('task-day');
-            const diaryEl = document.getElementById('task-diary');
-            const objEl = document.getElementById('task-objective');
-            if (!panel || !dayEl || !diaryEl || !objEl) return;
-            if (!currentDailyTask) { panel.style.display = 'none'; return; }
-            panel.style.display = 'block';
-            dayEl.textContent = `Day ${currentDay} 任務清單`;
-            diaryEl.textContent = currentDailyTask.diary;
-            objEl.textContent = currentDailyTask.completed ? `完成：${currentDailyTask.actionText}\n下一步：去睡覺。` : currentDailyTask.objective;
-        }
 
         function spawnCoughParticleBurst(count = 30, strength = 1.0) {
             const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
@@ -1508,7 +1722,7 @@
 
         function triggerTaskForcedCough() {
             AudioEngine.playHumanCough(0.75);
-            shakeIntensity = Math.max(shakeIntensity, 1.0);
+            requestShake(1.0, true);
             spawnCoughParticleBurst(24, 0.9);
         }
 
@@ -1518,7 +1732,7 @@
             if (currentDailyTask?.target && interactableProps[currentDailyTask.target]?.mesh) {
                 interactableProps[currentDailyTask.target].mesh.visible = true;
             }
-            updateTaskPanel();
+            updateDiegeticNote();
         }
 
         function attemptTaskAction() {
@@ -1528,7 +1742,7 @@
                 return;
             }
             currentDailyTask.completed = true;
-            updateTaskPanel();
+            updateDiegeticNote();
             triggerTaskForcedCough();
             showEphemeralText('小任務完成。妳被迫咳了一次，去睡覺。');
         }
@@ -1537,18 +1751,26 @@
             loadGameSettings();
             applyGameSettings();
             scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000); scene.fog = new THREE.FogExp2(0x000000, 0.05);
-            camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 100); camera.position.set(0, 0, 10);
+            camera = new THREE.PerspectiveCamera(gameSettings.fov || 70, window.innerWidth/window.innerHeight, 0.1, 100); camera.position.set(0, 0, 10);
             raycaster = new THREE.Raycaster();
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.getElementById('canvas-container').appendChild(renderer.domElement);
+            // Global pointer-lock guard: only lock when clicking the actual WebGL canvas
+            document.addEventListener('click', (e) => {
+                try {
+                    if (gameState === 'AWAKE' && e.target === renderer.domElement) {
+                        renderer.domElement.requestPointerLock();
+                    }
+                } catch (err) { /* ignore */ }
+            });
 
             buildEnvironment(); setupControls();
             initSettingsPanel();
             const settingsBtn = document.getElementById('settings-btn');
             if (settingsBtn) settingsBtn.style.display = 'block';
-            setupDailyTask(currentDay);
-            document.getElementById('cough-btn').addEventListener('click', () => triggerCough());
-            document.getElementById('letter-reading-screen').addEventListener('click', closeLetter);
+                setupDailyTask(currentDay);
+                document.getElementById('cough-btn').addEventListener('click', () => triggerCough());
+                document.getElementById('letter-reading-screen').addEventListener('click', closeLetter);
                     updateAnReaction();
                     // 每幀更新開發面板
                     if (devPanel) updateDevPanel();
@@ -1660,8 +1882,15 @@
 
             const bed = addBox(8,3,14, 15,-8.5,-10); addBox(7.8,1,6, 15,-6.5,-13); 
             bedHitbox = new THREE.Mesh(new THREE.BoxGeometry(10,8,16), new THREE.MeshBasicMaterial({visible:false})); bedHitbox.position.set(15,-8.5,-10); scene.add(bedHitbox); bedHitbox.userData = { id: 'bed' };
+            // 增加床尾遮擋塊以避免透視床底的線條（黑色實體）
+            const occluderMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const bedOccluder = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.8, 14.6), occluderMat);
+            bedOccluder.position.set(15, -9.6, -10); bedOccluder.renderOrder = 2; scene.add(bedOccluder);
 
             const desk = addBox(10,5,5, -14,-7.5,-15); const chair = addBox(3,3,3, -10,-8.5,-12);
+            // 為桌子下方增加遮擋塊，避免可透視桌底的線條
+            const deskOccluder = new THREE.Mesh(new THREE.BoxGeometry(10.4, 0.8, 5.4), occluderMat);
+            deskOccluder.position.set(-14, -9.6, -15); deskOccluder.renderOrder = 2; scene.add(deskOccluder);
 
             // 場景風格強化：天花燈框 + 地面引導線 + 走廊門框
             addBox(6, 0.3, 2.2, 0, 8.1, -1.5, dimMat);
@@ -1692,7 +1921,89 @@
             const vaseGroup = new THREE.Group(); vaseGroup.position.set(-14, -4.5, -15); scene.add(vaseGroup);
             vaseGroup.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.CylinderGeometry(0.5, 0.8, 2, 6)), baseMat));
             interactableProps['vase'] = { mesh: vaseGroup, hb: makePropHitbox(3,4,3, vaseGroup, 'vase') };
-            
+
+            // 取消密集短縫：改用少量長向線條作為深度參考，降低視覺密度以減少咳嗽後造成的線條擁擠
+            const floorLongMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.035 });
+            // 在地板上每隔幾米畫一條長線（橫向），作為視覺深度錨點
+            for (let z = -16; z <= 16; z += 3.0) {
+                const pts = [new THREE.Vector3(-19.9, -9.9, z), new THREE.Vector3(19.9, -9.9, z)];
+                const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), floorLongMat);
+                scene.add(line);
+                roomLines.push(line);
+                roomOrigVerts.push(Array.from(line.geometry.attributes.position.array));
+            }
+
+            // 牆面立柱暗示（極淡） — 忽略靠近門的前牆立柱，避免遮擋門口
+            const wallStudMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.02 });
+            const doorClearX = 4.0; // 在這範圍內不畫前牆立柱（門區域）
+            for (let i = -18; i <= 18; i += 2.4) {
+                const frontStud = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i, -9.9, -19.9), new THREE.Vector3(i, 9.9, -19.9)]), wallStudMat);
+                const backStud = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i, -9.9, 19.9), new THREE.Vector3(i, 9.9, 19.9)]), wallStudMat);
+                // 前牆：若在門口範圍內則略過，避免遮擋門的視覺
+                if (Math.abs(i) > doorClearX) {
+                    scene.add(frontStud);
+                    roomLines.push(frontStud);
+                    roomOrigVerts.push(Array.from(frontStud.geometry.attributes.position.array));
+                }
+                // 後牆立柱仍保留
+                scene.add(backStud);
+                roomLines.push(backStud);
+                roomOrigVerts.push(Array.from(backStud.geometry.attributes.position.array));
+            }
+            const mirrorClearZ = 4.0; // 在鏡子前後範圍不畫左牆立柱，避免遮擋鏡子
+            for (let j = -18; j <= 18; j += 2.4) {
+                const leftStud = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-19.9, -9.9, j), new THREE.Vector3(-19.9, 9.9, j)]), wallStudMat);
+                const rightStud = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(19.9, -9.9, j), new THREE.Vector3(19.9, 9.9, j)]), wallStudMat);
+                // 左牆（靠近鏡子）：若在鏡子區域則略過左牆立柱
+                if (Math.abs(j) > mirrorClearZ) {
+                    scene.add(leftStud);
+                    roomLines.push(leftStud);
+                    roomOrigVerts.push(Array.from(leftStud.geometry.attributes.position.array));
+                }
+                // 右牆立柱保留
+                scene.add(rightStud);
+                roomLines.push(rightStud);
+                roomOrigVerts.push(Array.from(rightStud.geometry.attributes.position.array));
+            }
+
+            // 踢腳板暗示線
+            const baseboardMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.04 });
+            const baseboardHeight = -9.6;
+            const baseboardLines = [
+                [new THREE.Vector3(-19.9, baseboardHeight, 19.9), new THREE.Vector3(19.9, baseboardHeight, 19.9)],
+                [new THREE.Vector3(-19.9, baseboardHeight, -19.9), new THREE.Vector3(19.9, baseboardHeight, -19.9)],
+                [new THREE.Vector3(-19.9, baseboardHeight, -19.9), new THREE.Vector3(-19.9, baseboardHeight, 19.9)],
+                [new THREE.Vector3(19.9, baseboardHeight, -19.9), new THREE.Vector3(19.9, baseboardHeight, 19.9)]
+            ];
+            baseboardLines.forEach(pts => {
+                const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), baseboardMat);
+                scene.add(line);
+                roomLines.push(line);
+                roomOrigVerts.push(Array.from(line.geometry.attributes.position.array));
+            });
+
+            // 移除床尾與放日記櫃子之間的不必要線條（避免在該區域出現雜亂線段）
+            (function(){
+                const xMin = 12, xMax = 18; // x 範圍靠近床尾與櫃子
+                const zMin = -10, zMax = -1.5; // z 範圍床尾到櫃子
+                const toRemove = [];
+                for (let idx = 0; idx < roomLines.length; idx++) {
+                    const ln = roomLines[idx];
+                    if (!ln || !ln.geometry || !ln.geometry.attributes || !ln.geometry.attributes.position) continue;
+                    const a = ln.geometry.attributes.position.array;
+                    for (let pi = 0; pi < a.length; pi += 3) {
+                        const px = a[pi], pz = a[pi+2];
+                        if (px >= xMin && px <= xMax && pz >= zMin && pz <= zMax) { toRemove.push(idx); break; }
+                    }
+                }
+                // 反向刪除，維持索引正確性
+                for (let r = toRemove.length - 1; r >= 0; r--) {
+                    const i = toRemove[r]; if (i < 0 || i >= roomLines.length) continue;
+                    const rem = roomLines[i]; if (rem) scene.remove(rem);
+                    roomLines.splice(i, 1); roomOrigVerts.splice(i, 1);
+                }
+            })();
+
             // 左側窗簾調整為落地窗高度
             const curtain = addBox(4, 18, 0.5, -6, -1, 19.5, dimMat); curtain.visible = false;
             interactableProps['curtain'] = { mesh: curtain, hb: makePropHitbox(6,20,2, curtain, 'curtain') };
@@ -1740,19 +2051,31 @@
                 console.warn('file:// 模式會被瀏覽器阻擋貼圖（CORS）。請改用本機 http 伺服器開啟。');
                 applyMirrorFallbackTexture('請用本機伺服器啟動');
             } else {
-                const loader = new THREE.TextureLoader();
-                loader.load('images/mirror_figure.png', (texture) => {
-                    texture.minFilter = THREE.LinearFilter;
-                    texture.magFilter = THREE.LinearFilter;
-                    mirrorPlane.material.map = texture;
-                    mirrorPlane.material.opacity = 0.16;
-                    mirrorPlane.material.depthWrite = false;
-                    mirrorPlane.material.needsUpdate = true;
-                    mirrorPlaneMat = mirrorPlane.material;
-                }, undefined, () => {
-                    console.warn('鏡中影像載入失敗：images/mirror_figure.png');
-                    applyMirrorFallbackTexture('鏡中影像載入失敗');
-                });
+                // 以兩張貼圖（normal / cry）載入鏡中影像
+                const loadMirrorTexture = (url, key, fallbackMsg) => {
+                    const loader = new THREE.TextureLoader();
+                    loader.load(url, (texture) => {
+                        texture.minFilter = THREE.LinearFilter;
+                        texture.magFilter = THREE.LinearFilter;
+                        mirrorTextures[key] = texture;
+                        // 當兩張都載入完畢，先顯示 normal
+                        if (mirrorTextures.normal && mirrorTextures.cry) {
+                            mirrorPlane.material.map = mirrorTextures.normal;
+                            mirrorPlane.material.opacity = 0.16;
+                            mirrorPlane.material.depthWrite = false;
+                            mirrorPlane.material.needsUpdate = true;
+                            mirrorPlane.material.color = new THREE.Color(0x888888);
+                            mirrorPlaneMat = mirrorPlane.material;
+                            if (mirrorPlane && mirrorPlane.scale.x !== 1) mirrorPlane.scale.x = 1;
+                        }
+                    }, undefined, () => {
+                        console.warn(`鏡中影像載入失敗：${url}`);
+                        if (!mirrorTextures[key]) applyMirrorFallbackTexture(fallbackMsg);
+                    });
+                };
+
+                loadMirrorTexture('images/mirror_figure.png', 'normal', '請用本機伺服器啟動');
+                loadMirrorTexture('images/mirror_figure_cry.png', 'cry', '哭泣影像載入失敗');
             }
 
             // 建立互動用 hitbox（使用鏡框位置）
@@ -1890,13 +2213,35 @@
                     }
                 }
                 else {
-                    // 鏡子凝視顯示處理
+                    // 鏡子凝視顯示處理（模糊→對焦）與雙圖切換
                     if (target === 'mirror') {
+                        // 依據線索進度切換鏡中影像（背影 -> 哭泣）
+                        const mirrorClue = (typeof emotionalClues !== 'undefined') ? emotionalClues['mirror'] : null;
+                        if (mirrorClue && mirrorClue.currentFragment >= (mirrorClue.fragments ? mirrorClue.fragments.length : 0)) {
+                            // 已解完所有片段：顯示哭泣圖
+                            if (mirrorPlaneMat && mirrorTextures.cry && mirrorPlaneMat.map !== mirrorTextures.cry) {
+                                mirrorPlaneMat.map = mirrorTextures.cry;
+                                mirrorPlaneMat.needsUpdate = true;
+                            }
+                        } else {
+                            // 未解完：顯示背影圖
+                            if (mirrorPlaneMat && mirrorTextures.normal && mirrorPlaneMat.map !== mirrorTextures.normal) {
+                                mirrorPlaneMat.map = mirrorTextures.normal;
+                                mirrorPlaneMat.needsUpdate = true;
+                            }
+                        }
+
                         mirrorGazeTimer += dt;
-                        if (mirrorPlaneMat) mirrorPlaneMat.opacity = Math.min(0.85, 0.16 + mirrorGazeTimer * MIRROR_FADE_SPEED);
+                        if (mirrorPlaneMat) {
+                            // 移除對 Mesh 使用 CSS filter（無效），改以更長的淡入模擬朦朧
+                            const fadeProgress = Math.min(1.0, mirrorGazeTimer * MIRROR_FADE_SPEED * 0.6);
+                            mirrorPlaneMat.opacity = 0.16 + fadeProgress * 0.69;
+                        }
                     } else {
                         mirrorGazeTimer = 0;
-                        if (mirrorPlaneMat) mirrorPlaneMat.opacity = (interactableProps['mirror']?.mesh?.visible ? 0.16 : 0.0);
+                        if (mirrorPlaneMat) {
+                            mirrorPlaneMat.opacity = (interactableProps['mirror']?.mesh?.visible ? 0.16 : 0.0);
+                        }
                     }
 
                     let clue = emotionalClues[target];
@@ -1915,7 +2260,7 @@
                             if (clue.isContradicting) {
                                 // 在矛盾狀態下閃爍顯示片段，且不推進進度
                                 clue.contradictTimer -= dt;
-                                const a = Math.floor((clue.contradictTimer * 10) % 2);
+                                const a = Math.floor((clue.contradictTimer * 3) % 2);
                                 const alt = clue.fragments[(clue.currentFragment) % clue.fragments.length].text;
                                 const alt2 = clue.fragments[Math.max(0, clue.currentFragment-1) % clue.fragments.length].text || alt;
                                 infText.innerText = a === 0 ? alt : alt2;
@@ -1955,8 +2300,11 @@
                                         // 顯示最後一段作為微弱回饋，並短暫發光
                                         const lastText = (activeFragments && activeFragments.length) ? activeFragments[activeFragments.length-1].text : '';
                                         infText.innerText = lastText || infText.innerText;
+                                        const r = 255;
+                                        const g = Math.round(100 + (acceptance / 100) * 155);
+                                        const b = Math.round(100 + (acceptance / 100) * 155);
                                         infText.style.color = clue.isActive ? '#ff6666' : '#ffdedd';
-                                        infText.style.textShadow = '0 0 12px rgba(255,100,100,0.6)';
+                                        infText.style.textShadow = `0 0 12px rgba(${r},${g},${b},0.6)`;
                                         if (typeof AudioEngine !== 'undefined' && AudioEngine.playBreath) AudioEngine.playBreath();
                                         setTimeout(() => { clue._gaveGazeFeedback = false; infText.style.textShadow = ''; }, 3000);
                                     }
@@ -2050,7 +2398,7 @@
         let activeBlood = [];
         function triggerCough() {
             if (gameState === 'COLLAPSE') {
-                AudioEngine.playChoke(); shakeIntensity = 0.5;
+                    AudioEngine.playChoke(); requestShake(0.5);
                 document.getElementById('vignette').style.background = 'rgba(255,0,0,0.5)'; setTimeout(()=>document.getElementById('vignette').style.background = '', 200);
                 return;
             }
@@ -2073,17 +2421,30 @@
             lastCoughTime = now;
 
             if (consecutiveCough >= 3) {
-                // 鎖住 20 秒
+                // 鎖住 20 秒，並提供 UI 回饋與按鈕禁用
                 coughLockedUntil = now + 20000;
                 consecutiveCough = 0;
-                showEphemeralText("停下來。妳在做什麼？");
-                // 強制降低 acceptance
-                acceptance = Math.max(0, acceptance - acceptancePenaltyConsecutive);
-                if (AudioEngine.playGentleTone) AudioEngine.playGentleTone();
+                showEphemeralText("喉嚨...太痛了...等一會");
+                const btn = document.getElementById('cough-btn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.style.color = '#666';
+                    btn.style.borderColor = '#666';
+                }
+                AudioEngine.playChoke();
+                setTimeout(() => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.style.color = 'rgba(255, 255, 255, 0.7)';
+                        btn.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                    }
+                }, 20000);
                 return;
             }
 
-            shakeIntensity = 1.2; coughCountToday++; totalCoughCount++; weaknessTimer = 5.0; AudioEngine.playScrape();
+            requestShake(1.2); coughCountToday++; totalCoughCount++; weaknessTimer = 5.0; AudioEngine.playScrape();
+            // 顯示咳嗽後的右下內心字幕
+            try { showCoughSubtitleOnce(); } catch (e) {}
             if(totalCoughCount===1) unlockPoemFragment('P03');
             if(totalCoughCount>5) unlockPoemFragment('P09');
             
@@ -2106,20 +2467,26 @@
                 if (emotionalClues[currentGazedObject]) {
                     acceptance = Math.max(0, acceptance - acceptanceDecreaseOnCough);
                     let clue = emotionalClues[currentGazedObject];
-                    
-                    // 舊版紅劇場：誤解激活
-                    clue.delusionCount++;
-                    if (clue.delusionCount === 2 && !clue.hasReckoned) {
-                        clue.isActive = true;
-                        playerCognition.activeDelusions.push(clue.target);
-                        generateFakeClue(clue);
-                        AudioEngine.playScrape();
-                    } else if (clue.delusionCount === 3 && clue.isActive) {
-                        showFakeSuccess('妳聽見她了。');
-                    } else if (clue.delusionCount >= 5 && clue.isActive) {
-                        triggerUncertainty(clue);
+
+                    // 若已被看破（hasReckoned），不再增加妄想值，僅給予輕微視覺回饋
+                    if (clue.hasReckoned) {
+                        document.getElementById('canvas-container').classList.add('fake-flash');
+                        setTimeout(() => { document.getElementById('canvas-container').classList.remove('fake-flash'); }, 400);
+                    } else {
+                        // 舊版紅劇場：誤解激活
+                        clue.delusionCount++;
+                        if (clue.delusionCount === 2 && !clue.isActive) {
+                            clue.isActive = true;
+                            playerCognition.activeDelusions.push(clue.target);
+                            generateFakeClue(clue);
+                            AudioEngine.playScrape();
+                        } else if (clue.delusionCount === 3 && clue.isActive) {
+                            showFakeSuccess('妳聽見她了。');
+                        } else if (clue.delusionCount >= 5 && clue.isActive) {
+                            triggerUncertainty(clue);
+                        }
                     }
-                    
+
                     // 鎖死邏輯
                     if (clue.currentFragment >= 2 && !lockedClues.has(currentGazedObject)) {
                         lockedClues.add(currentGazedObject);
@@ -2154,7 +2521,6 @@
         function startSleepSequence() {
             gameState = 'SLEEPING'; gazeTimer = 0; AudioEngine.startHeartbeat(0.8);
             document.getElementById('ui-layer').style.display='none'; document.getElementById('reticle').style.display='none'; document.getElementById('gaze-progress').style.opacity='0'; document.getElementById('interaction-hint').style.opacity='0'; document.getElementById('inference-text').style.opacity='0';
-            document.getElementById('task-panel').style.display = 'none';
             if(coughCountToday===0 && currentDay===2) unlockPoemFragment('P10');
             targetLat = 85; 
 
@@ -2187,6 +2553,17 @@
             ns.style.display = 'flex'; setTimeout(() => ns.style.opacity = '1', 50);
             currentDay++; document.getElementById('day-title').innerText = `Day ${currentDay}`;
             pb.style.width = '0%'; setTimeout(() => { pb.style.width = '100%'; }, 500);
+                // 顯示簡短敘事提示：讓玩家知道這個進度條是「意識流失」的隱喻
+                const sleepHintEl = document.getElementById('sleep-hint');
+                if (sleepHintEl) {
+                    sleepHintEl.innerText = '意識正在流失。';
+                    // 顯示並於進度條 transitionend 時自動淡出
+                    const showHint = () => { sleepHintEl.style.opacity = '1'; };
+                    const hideHint = () => { sleepHintEl.style.opacity = '0'; pb.removeEventListener('transitionend', hideHint); };
+                    showHint();
+                    // 當進度條跑完（transitionend）時隱藏提示
+                    pb.addEventListener('transitionend', hideHint);
+                }
             
             playerCognition.memoryDecayCounter++;
             const state = { activeDelusions: playerCognition.activeDelusions, hasAnyReckoningOccurred, acceptance, currentDay, trustLevel: playerCognition.trustLevel, memoryDecayCounter: playerCognition.memoryDecayCounter };
@@ -2244,6 +2621,26 @@
             finalBloodParticles.push({ mesh: pSys, vels: vels, life: 180 });
         }
 
+        // Spawn a floral bloom made of many thin line-petals that expand then gently fall.
+        function spawnFinalBloom() {
+            if (!scene || !camera) return;
+            const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+            const spawnPos = camera.position.clone().add(dir.clone().multiplyScalar(2)); spawnPos.y -= 0.6;
+            const nPetals = 50; const arcs = 5; const segs = 8;
+            for (let i = 0; i < nPetals; i++) {
+                const baseAngle = (i % arcs) * (Math.PI * 2 / arcs);
+                const theta = baseAngle + (Math.random() - 0.5) * 0.4;
+                const length = 1.2 + Math.random() * 1.6;
+                const amp = 0.25 + Math.random() * 0.6;
+                const posArr = new Float32Array(segs * 3);
+                for (let j = 0; j < segs; j++) { posArr[j*3] = spawnPos.x; posArr[j*3+1] = spawnPos.y; posArr[j*3+2] = spawnPos.z; }
+                const geo = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+                const mat = new THREE.LineBasicMaterial({ color: 0x600000, transparent: true, opacity: 1.0 });
+                const line = new THREE.Line(geo, mat); scene.add(line);
+                finalBloomParticles.push({ mesh: line, theta: theta, length: length, amp: amp, segs: segs, elapsed: 0, dropOffset: 0, vy: -0.0, spawnPos: spawnPos.clone(), life: 8.0 });
+            }
+        }
+
         function showFinalLine1() {
             finalSpeechStage = 1;
             finalLine1El = document.createElement('div');
@@ -2290,9 +2687,11 @@
             [finalLine1El, finalLine2El, finalLine3El].forEach(el => { if (el) el.remove(); });
             finalCoughActive = false;
             if (finalCoughInterval) { clearInterval(finalCoughInterval); finalCoughInterval = null; }
-            // 清理終幕血粒子
+            // 清理終幕血粒子與花型粒子
             finalBloodParticles.forEach(sys => { if (sys.mesh) scene.remove(sys.mesh); });
             finalBloodParticles = [];
+            finalBloomParticles.forEach(sys => { if (sys.mesh) scene.remove(sys.mesh); });
+            finalBloomParticles = [];
             // 淡入圖片，結束後再進結局
             showFinalImage(() => {
                 triggerEnding();
@@ -2303,29 +2702,31 @@
             gameState = 'FINAL'; finalCoughActive = true; finalCoughStartTime = Date.now(); finalSpeechStage = 0;
             targetLon = 90; targetLat = 0; lon = 90; lat = 0; moveForward = 0; moveRight = 0;
             document.getElementById('ui-layer').style.display = 'none'; document.getElementById('reticle').style.display = 'none'; document.getElementById('interaction-hint').style.opacity = '0'; document.getElementById('inference-text').style.opacity = '0'; document.getElementById('desktop-hint').style.display = 'none'; document.getElementById('gaze-progress').style.opacity = '0';
-            document.getElementById('task-panel').style.display = 'none';
             if (document.pointerLockElement) document.exitPointerLock();
             // 初始咳
             AudioEngine.playHumanCough(0.6);
-            // 每 2 秒一次人咳 + 晃動
+            // 每 2 秒一次人咳 + 晃動（會在第 8 秒停止，之後進入靜默）
             finalCoughInterval = setInterval(() => {
                 if (!finalCoughActive) { clearInterval(finalCoughInterval); finalCoughInterval = null; return; }
                 AudioEngine.playHumanCough(0.4 + Math.random() * 0.5);
-                shakeIntensity = 2.0;
+                requestShake(2.0);
                 document.getElementById('vignette').style.background = 'radial-gradient(circle, rgba(0,0,0,0) 0%, rgba(200,0,0,0.7) 70%, rgba(0,0,0,0.95) 100%)';
                 setTimeout(() => { document.getElementById('vignette').style.background = 'radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(50,0,0,0.4) 80%, rgba(0,0,0,0.9) 100%)'; }, 400);
                 spawnFinalBlood();
             }, 2000);
             // 第一句話在 3 秒後出現，伴隨強咳
             setTimeout(() => { AudioEngine.playHumanCough(0.8); showFinalLine1(); }, 3000);
-            // 第二句話在 8 秒後
-            setTimeout(() => { AudioEngine.playHumanCough(0.7); showFinalLine2(); }, 8000);
-            // 最後紅字在 14 秒後
+            // 第二句話在 5 秒後
+            setTimeout(() => { AudioEngine.playHumanCough(0.7); showFinalLine2(); }, 5000);
+            // 在第 8 秒時顯示最終紅字並停止強制咳嗽（進入靜默），同時產生花型效果
             setTimeout(() => {
                 finalSpeechStage = 3; AudioEngine.playHumanCough(0.9); showFinalLine3();
+                // spawn floral bloom to coincide with final red line
+                try { spawnFinalBloom(); } catch(e) { console.warn('spawnFinalBloom failed', e); }
                 if (finalCoughInterval) { clearInterval(finalCoughInterval); finalCoughInterval = null; }
-                setTimeout(() => { document.body.style.cursor = 'pointer'; document.body.addEventListener('click', onFinalClick); }, 3000);
-            }, 14000);
+            }, 8000);
+            // 允許玩家在第 15 秒點擊繼續（給玩家一段靜默空間以感受朱槿花）
+            setTimeout(() => { document.body.style.cursor = 'pointer'; document.body.addEventListener('click', onFinalClick); }, 15000);
         }
 
         function triggerEnding() {
@@ -2389,7 +2790,24 @@
                             replayBtn.style.marginTop = '12px'; replayBtn.style.padding = '8px 14px';
                             replayBtn.style.background = '#220000'; replayBtn.style.color = '#ffdddd';
                             replayBtn.style.border = '1px solid #ff6666'; replayBtn.style.cursor = 'pointer';
-                            replayBtn.addEventListener('click', () => { window.location.reload(); });
+                            replayBtn.addEventListener('click', () => {
+                                // 嘗試清理 ending-screen，避免舊畫面殘留
+                                const es = document.getElementById('ending-screen');
+                                if (es) {
+                                    es.style.display = 'none';
+                                    es.style.opacity = '0';
+                                }
+                                // 重置鏡中平面的變換，確保新一局從乾淨狀態開始
+                                if (mirrorPlane) {
+                                    mirrorPlane.scale.x = 1;
+                                    if (mirrorPlane.material && mirrorPlane.material.map) {
+                                        mirrorPlane.material.map.flipX = false;
+                                        mirrorPlane.material.map.needsUpdate = true;
+                                    }
+                                }
+                                // 稍微延遲確保 DOM 完全隱藏後再重載
+                                setTimeout(() => { window.location.reload(); }, 50);
+                            });
                             et.appendChild(document.createElement('div')).appendChild(replayBtn);
                         }, 3000);
                     }
@@ -2414,7 +2832,13 @@
             uiScale: 1.2,
             musicVolume: 50,
             sfxVolume: 80,
-            muted: false
+            muted: false,
+            fov: 70,
+            reduceShake: false,
+            crosshairPersistent: false,
+            comfortMode: false,
+            moveSpeedScale: 1.0,
+            vignetteIntensity: 1.0
         };
         let gameSettings = { ...DEFAULT_GAME_SETTINGS };
 
@@ -2473,6 +2897,52 @@
         function applyGameSettings() {
             applyUIScale();
             applyAudioSettings();
+            // Apply FOV if camera exists
+            if (typeof camera !== 'undefined' && camera) {
+                camera.fov = Number(gameSettings.fov || camera.fov);
+                camera.updateProjectionMatrix();
+            }
+            // Apply crosshair persistent display via class
+            const ret = document.getElementById('reticle');
+            if (ret) {
+                if (gameSettings.crosshairPersistent) {
+                    ret.classList.add('reticle-steady');
+                    ret.style.opacity = '';
+                } else {
+                    ret.classList.remove('reticle-steady');
+                    ret.style.opacity = '';
+                }
+            }
+
+            // Comfort mode: enforce a few accessibility-friendly toggles
+            if (gameSettings.comfortMode) {
+                gameSettings.reduceShake = true;
+                gameSettings.crosshairPersistent = true;
+            }
+
+            // Update global reduce-shake flag used by requestShake
+            if (typeof reduceShakeGlobal !== 'undefined') reduceShakeGlobal = !!gameSettings.reduceShake;
+
+            // Comfort mode: reduce noise animations and UI motion
+            const noiseEls = document.querySelectorAll('.noise-bg');
+            noiseEls.forEach(el => {
+                if (gameSettings.comfortMode) {
+                    el.style.animation = 'none';
+                    el.style.opacity = '0.15';
+                } else {
+                    el.style.animation = '';
+                    el.style.opacity = '';
+                }
+            });
+
+            if (gameSettings.comfortMode) {
+                const ids = ['inference-text'];
+                ids.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.transform = '';
+                });
+            }
+
             saveGameSettings();
         }
 
@@ -2486,6 +2956,27 @@
                 <div class="setting-row">
                     <label>文字大小 <span class="val" id="val-ui-scale"></span></label>
                     <input id="set-ui-scale" type="range" min="80" max="160" step="5" value="${Math.round(gameSettings.uiScale * 100)}">
+                </div>
+                <div class="setting-row">
+                    <label>視野 FOV <span class="val" id="val-fov"></span></label>
+                    <input id="set-fov" type="range" min="65" max="90" step="1" value="${gameSettings.fov}">
+                </div>
+                <div class="setting-row">
+                    <label><input id="set-reduce-shake" type="checkbox" ${gameSettings.reduceShake ? 'checked' : ''}> 減少畫面晃動</label>
+                </div>
+                <div class="setting-row">
+                    <label><input id="set-crosshair" type="checkbox" ${gameSettings.crosshairPersistent ? 'checked' : ''}> 常駐準星</label>
+                </div>
+                <div class="setting-row">
+                    <label><input id="set-comfort" type="checkbox" ${gameSettings.comfortMode ? 'checked' : ''}> 舒適模式（關閉動態特效、增強準星）</label>
+                </div>
+                <div class="setting-row">
+                    <label>移動速度 <span class="val" id="val-move-speed"></span></label>
+                    <input id="set-move-speed" type="range" min="50" max="100" step="1" value="${Math.round((gameSettings.moveSpeedScale||1.0)*100)}">
+                </div>
+                <div class="setting-row">
+                    <label>暗角強度 <span class="val" id="val-vign"></span></label>
+                    <input id="set-vignette" type="range" min="0" max="100" step="1" value="${Math.round((gameSettings.vignetteIntensity||1.0)*100)}">
                 </div>
                 <div class="setting-row">
                     <label>音樂音量 <span class="val" id="val-music"></span></label>
@@ -2502,24 +2993,57 @@
             `;
 
             const uiScaleEl = document.getElementById('set-ui-scale');
+            const fovEl = document.getElementById('set-fov');
+            const reduceShakeEl = document.getElementById('set-reduce-shake');
+            const crosshairEl = document.getElementById('set-crosshair');
+            const moveSpeedEl = document.getElementById('set-move-speed');
+            const vignEl = document.getElementById('set-vignette');
             const musicEl = document.getElementById('set-music');
             const sfxEl = document.getElementById('set-sfx');
             const muteEl = document.getElementById('set-muted');
             const valUi = document.getElementById('val-ui-scale');
+            const valFov = document.getElementById('val-fov');
+            const valMove = document.getElementById('val-move-speed');
+            const valVign = document.getElementById('val-vign');
             const valMusic = document.getElementById('val-music');
             const valSfx = document.getElementById('val-sfx');
 
             const syncLabels = () => {
                 valUi.textContent = `${Math.round(gameSettings.uiScale * 100)}%`;
+                valFov.textContent = `${gameSettings.fov}°`;
+                valMove.textContent = `${Math.round((gameSettings.moveSpeedScale||1.0)*100)}%`;
+                valVign.textContent = `${Math.round((gameSettings.vignetteIntensity||1.0)*100)}%`;
                 valMusic.textContent = `${gameSettings.musicVolume}%`;
                 valSfx.textContent = `${gameSettings.sfxVolume}%`;
             };
             syncLabels();
 
             uiScaleEl.addEventListener('input', () => { gameSettings.uiScale = Number(uiScaleEl.value) / 100; syncLabels(); applyGameSettings(); });
+            fovEl.addEventListener('input', () => { gameSettings.fov = Number(fovEl.value); syncLabels(); if (typeof camera !== 'undefined' && camera) { camera.fov = gameSettings.fov; camera.updateProjectionMatrix(); } saveGameSettings(); });
+            reduceShakeEl.addEventListener('change', () => { gameSettings.reduceShake = reduceShakeEl.checked; applyGameSettings(); });
+            crosshairEl.addEventListener('change', () => { gameSettings.crosshairPersistent = crosshairEl.checked; applyGameSettings(); });
+            moveSpeedEl.addEventListener('input', () => { gameSettings.moveSpeedScale = Number(moveSpeedEl.value) / 100; syncLabels(); saveGameSettings(); });
+            vignEl.addEventListener('input', () => { gameSettings.vignetteIntensity = Number(vignEl.value) / 100; syncLabels(); applyGameSettings(); });
             musicEl.addEventListener('input', () => { gameSettings.musicVolume = Number(musicEl.value); syncLabels(); applyGameSettings(); });
             sfxEl.addEventListener('input', () => { gameSettings.sfxVolume = Number(sfxEl.value); syncLabels(); applyGameSettings(); });
             muteEl.addEventListener('change', () => { gameSettings.muted = !!muteEl.checked; applyGameSettings(); });
+            
+            const comfortEl = document.getElementById('set-comfort');
+            if (comfortEl) {
+                comfortEl.addEventListener('change', () => {
+                    gameSettings.comfortMode = !!comfortEl.checked;
+                    if (comfortEl.checked) {
+                        const reduceEl = document.getElementById('set-reduce-shake');
+                        const crossEl = document.getElementById('set-crosshair');
+                        if (reduceEl) reduceEl.checked = true;
+                        if (crossEl) crossEl.checked = true;
+                        gameSettings.reduceShake = true;
+                        gameSettings.crosshairPersistent = true;
+                    }
+                    applyGameSettings();
+                    saveGameSettings();
+                });
+            }
 
             const closePanel = () => { panel.style.display = 'none'; };
             document.getElementById('settings-close').addEventListener('click', closePanel);
@@ -2572,10 +3096,7 @@
             const joyBase = document.getElementById('joystick-base'), joyStick = document.getElementById('joystick-stick'), halfW = window.innerWidth / 2;
             const canvas = renderer.domElement;
             
-            // --- 新增：指針鎖定 (Pointer Lock) ---
-            canvas.addEventListener('click', () => {
-                if (gameState === 'AWAKE') canvas.requestPointerLock();
-            });
+            // Pointer lock is handled globally to avoid UI overlay interception.
             
             document.addEventListener('pointerlockchange', () => {
                 const dh = document.getElementById('desktop-hint');
@@ -2588,17 +3109,18 @@
                 }
             });
 
-            let invertX = false, invertY = false; // 可在執行時切換
-            let mouseSens = (mouseSensitivityPreset && sensitivityOptions[mouseSensitivityPreset]) ? sensitivityOptions[mouseSensitivityPreset] : 0.12; // degrees per pixel, 可用 K/L 調整
+            // invertX/invertY and mouseSens are defined globally so animateGame can consume raw deltas
             
             document.addEventListener('mousemove', (e) => {
                 if (gameState !== 'AWAKE' || document.pointerLockElement !== canvas) return;
                 const dx = invertX ? -e.movementX : e.movementX;
                 const dy = invertY ? e.movementY : -e.movementY;
-                // 使用 degrees-per-pixel 直接作用於目標角度，移除不直觀的乘 180
-                targetLon += dx * mouseSens;
-                targetLat += dy * mouseSens;
-                targetLat = Math.max(-85, Math.min(85, targetLat));
+                // Keep a very wide per-event cap to avoid pathological spikes but accumulate per-frame
+                const maxDelta = 120;
+                const cappedDx = Math.max(-maxDelta, Math.min(maxDelta, dx));
+                const cappedDy = Math.max(-maxDelta, Math.min(maxDelta, dy));
+                rawMouseDX += cappedDx;
+                rawMouseDY += cappedDy;
                 stationaryTimer = 0; breathPlayed = false;
             });
 
@@ -2795,65 +3317,21 @@
                     { count: 26, title: '最後的朱槿花', yOffset: -20 }
                 ];
                 const hoverTexts = [
-                    "十月十四日。妳圈起了這個日期，然後忘了。",
-                    "茶還在冒煙。妳不在椅子上，圍巾還在。",
-                    "腳印停在門前。傘沒有帶走，雨也沒有。",
-                    "床底下有東西在看妳。妳知道那是妳自己。",
-                    "妳會好起來的。——安",
-                    "紅色的不是血。是妳終於願意哭出來的東西。",
-                    "門是開的。圍巾留在地上。妳沒有回頭。"
+                        "十月十四日。你親手圈起，卻假裝忘記的日期。",
+                        "茶杯還暖，但對面的椅子空了。",
+                        "足印在門前猶豫不決，傘忘了帶走。",
+                        "床底下的積水倒映著你的臉。",
+                        "牆上的字跡顫抖，署名是安。",
+                        "紅色不是血，是你終於願意流出的淚。",
+                        "門開了。地上只剩一條圍巾，和一朵朱槿花。"
                 ];
                 const TOTAL_FRAGMENTS = 26;
                 const DOT_SPACING = 140;
-                const CARD_H_GAP = 200;
                 const GALLERY_BASE_PATH = 'images/gallery/';
                 let overlayElement = null;
                 let fullscreenElement = null;
-                let dragState = null;
 
-                function bindScrollDrag(scrollArea) {
-                    if (!scrollArea) return;
-                    let isDown = false, startX = 0, startScroll = 0;
-                    const onPointerDown = (e) => {
-                        if (e.button !== 0) return;
-                        isDown = true;
-                        startX = e.clientX;
-                        startScroll = scrollArea.scrollLeft;
-                        scrollArea.setPointerCapture(e.pointerId);
-                    };
-                    const onPointerMove = (e) => {
-                        if (!isDown) return;
-                        const dx = e.clientX - startX;
-                        scrollArea.scrollLeft = startScroll - dx;
-                    };
-                    const onPointerUp = (e) => {
-                        isDown = false;
-                        try { scrollArea.releasePointerCapture(e.pointerId); } catch (_) {}
-                    };
-                    const onWheel = (e) => {
-                        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                            e.preventDefault();
-                            scrollArea.scrollLeft += e.deltaY;
-                        }
-                    };
-                    scrollArea.addEventListener('pointerdown', onPointerDown);
-                    scrollArea.addEventListener('pointermove', onPointerMove);
-                    scrollArea.addEventListener('pointerup', onPointerUp);
-                    scrollArea.addEventListener('pointercancel', onPointerUp);
-                    scrollArea.addEventListener('wheel', onWheel, { passive: false });
-                    dragState = { scrollArea, onPointerDown, onPointerMove, onPointerUp, onWheel };
-                }
-
-                function unbindScrollDrag() {
-                    if (!dragState || !dragState.scrollArea) return;
-                    const s = dragState;
-                    s.scrollArea.removeEventListener('pointerdown', s.onPointerDown);
-                    s.scrollArea.removeEventListener('pointermove', s.onPointerMove);
-                    s.scrollArea.removeEventListener('pointerup', s.onPointerUp);
-                    s.scrollArea.removeEventListener('pointercancel', s.onPointerUp);
-                    s.scrollArea.removeEventListener('wheel', s.onWheel);
-                    dragState = null;
-                }
+                // Gallery uses native scrolling (CSS) now; custom drag removed to avoid pointer capture conflicts.
 
                 function initDOM() {
                     if (document.getElementById('gallery-overlay')) return;
@@ -2899,26 +3377,46 @@
                         html += `
                             <div class="${cardClass}" style="left: ${leftPos}; top: ${topPos};" id="card-${index}" ${titleAttr} ${isUnlocked ? `onclick="GallerySystem.viewImage('${imgSrc}', ${index})"` : ''}>
                                 ${isUnlocked 
-                                    ? `<img src="${imgSrc}" class="gallery-img" id="img-${index}" onerror="this.parentElement.innerHTML='<div style=color:#fff;text-align:center;padding:20px;font-size:1.2rem;>${item.title}</div>'"><div class="hover-caption">${caption}</div>` 
-                                    : `<div class="locked-q">？</div>`
-                                }
+                                            ? `<img data-src="${imgSrc}" class="gallery-img" id="img-${index}" src="" onerror="this.parentElement.innerHTML='<div style=\"color:#fff;text-align:center;padding:20px;font-size:1.2rem;\">${item.title}</div>'"><div class="hover-caption">${caption}</div>` 
+                                            : `<div class="locked-q">？</div>`
+                                        }
                             </div>
                         `;
                     });
                     html += `</div></div>`;
                     overlayElement.innerHTML = html;
+                    // Setup lazy loading for images inside the gallery overlay
+                    setupGalleryLazyLoading();
                 }
+
+                    function setupGalleryLazyLoading() {
+                        if (!overlayElement) return;
+                        const scrollArea = overlayElement.querySelector('#gallery-scroll-area');
+                        const imgs = overlayElement.querySelectorAll('img.gallery-img[data-src]');
+                        if (!imgs || imgs.length === 0) return;
+                        if (!('IntersectionObserver' in window)) {
+                            imgs.forEach(img => { if (img.dataset.src) { img.src = img.dataset.src; img.removeAttribute('data-src'); } });
+                            return;
+                        }
+                        const obsRoot = scrollArea || null;
+                        const observer = new IntersectionObserver((entries) => {
+                            entries.forEach(entry => {
+                                if (entry.isIntersecting) {
+                                    const img = entry.target;
+                                    if (img.dataset.src) { img.src = img.dataset.src; img.removeAttribute('data-src'); }
+                                    observer.unobserve(img);
+                                }
+                            });
+                        }, { root: obsRoot, rootMargin: '200px' });
+                        imgs.forEach(img => observer.observe(img));
+                    }
 
                 return {
                     open: function() {
                         releasePointerLockForUI();
                         initDOM(); render(); overlayElement.classList.add('active');
                         const scrollArea = document.getElementById('gallery-scroll-area');
-                        unbindScrollDrag();
-                        if(scrollArea) {
-                            scrollArea.scrollLeft = 0;
-                            bindScrollDrag(scrollArea);
-                        }
+                        if (scrollArea) scrollArea.scrollLeft = 0;
                         setTimeout(() => {
                             PAINTINGS.forEach((_, i) => {
                                 const card = document.getElementById(`card-${i}`);
@@ -2928,7 +3426,6 @@
                     },
                     close: function() {
                         if (!overlayElement) return;
-                        unbindScrollDrag();
                         PAINTINGS.forEach((_, i) => {
                             const card = document.getElementById(`card-${i}`);
                             if(card) {
@@ -2953,6 +3450,62 @@
             function showMemoryGallery() { GallerySystem.open(); }
 
         const clock = new THREE.Clock();
+        let lastRaycastTime = 0;
+        const RAYCAST_INTERVAL = 1000 / 15; // 15Hz gaze checks
+
+        function updateVignetteForAcceptance() {
+            const vignette = document.getElementById('vignette');
+            if (!vignette) return;
+            const redIntensity = (100 - acceptance) / 100;
+            const blueIntensity = acceptance / 100;
+            const defaultRed = 50 * redIntensity;
+            const defaultBlue = 180 * blueIntensity;
+            const vignAlpha = (typeof gameSettings !== 'undefined' ? (gameSettings.vignetteIntensity || 1.0) : 1.0) * 0.4;
+            vignette.style.background = `
+                radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(${defaultRed},0,${defaultBlue},${vignAlpha}) 80%, rgba(0,0,0,0.9) 100%),
+                repeating-linear-gradient(45deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(20,0,0,0.1) 3px, rgba(0,0,0,0) 4px)
+            `;
+        }
+
+        function updateAcceptanceTextMotion(dt) {
+            if (gameSettings && gameSettings.comfortMode) return;
+            // 平滑、有規律的文字跳動（以 sin 波驅動，避免隨機噪聲造成眼睛不適）
+            if (typeof acceptanceAnim === 'undefined') acceptanceAnim = { phase: 0 };
+            acceptanceAnim.phase += dt * 0.8 * Math.PI * 2; // 0.8 Hz
+            const phase = acceptanceAnim.phase;
+            const ampScale = Math.max(0, (100 - acceptance) / 100); // 0..1 (acceptance 低 -> 動作大)
+            const maxTranslate = 3; // px (milder)
+            const maxRotate = 3; // deg (milder)
+            const translate = Math.sin(phase) * maxTranslate * ampScale * 0.5;
+            const rotate = Math.sin(phase * 0.6) * maxRotate * ampScale * 0.5;
+            const ids = ['inference-text'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (!el.dataset.origTransform) el.dataset.origTransform = el.style.transform || '';
+                const base = el.dataset.origTransform;
+                el.style.transform = `${base} translateY(${translate.toFixed(2)}px) rotate(${rotate.toFixed(2)}deg)`;
+            });
+        }
+
+        function updateFlowerVisual() {
+            const flower = document.getElementById('flower-symbol');
+            if (!flower) return;
+            const scale = 0.6 + (typeof acceptance !== 'undefined' ? (acceptance / 100) * 1.4 : 0.6);
+            const opacity = 0.3 + (typeof acceptance !== 'undefined' ? (acceptance / 100) * 0.7 : 0.3);
+            flower.style.transform = `scale(${scale})`;
+            flower.style.opacity = opacity;
+            const petals = flower.querySelectorAll('svg path');
+            petals.forEach((p, i) => {
+                const open = (typeof acceptance !== 'undefined') ? (acceptance / 100) : 0.5;
+                const rot = (i - 2) * (10 + open * 10);
+                const s = 0.6 + open * 1.4;
+                p.setAttribute('transform', `rotate(${rot} 50 50) scale(${s})`);
+                p.setAttribute('fill', (acceptance > 50) ? '#ff4444' : '#660000');
+                p.style.opacity = Math.max(0.25, 0.5 + (acceptance - 50) / 200);
+            });
+        }
+
         function animateGame() {
             requestAnimationFrame(animateGame); const deltaTime = clock.getDelta();
             // Final-stage short-circuit: render final cough sequence separately
@@ -2979,11 +3532,40 @@
                     sys.mesh.geometry.attributes.position.needsUpdate = true; sys.life--;
                     if (sys.life <= 0) { scene.remove(sys.mesh); finalBloodParticles.splice(j, 1); }
                 }
+                // 更新花型粒子（展開 -> 慢慢下墜）
+                for (let b = finalBloomParticles.length - 1; b >= 0; b--) {
+                    const bloom = finalBloomParticles[b];
+                    bloom.elapsed += deltaTime;
+                    const progress = Math.min(1, bloom.elapsed / 3.0);
+                    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+                    const up = new THREE.Vector3(0, 1, 0);
+                    const right = new THREE.Vector3().crossVectors(forward, up).normalize();
+                    const spreadVec = new THREE.Vector3().addScaledVector(right, Math.cos(bloom.theta)).addScaledVector(up, Math.sin(bloom.theta)).normalize();
+                    const posAttr = bloom.mesh.geometry.attributes.position;
+                    const posArr = posAttr.array;
+                    const segs = bloom.segs;
+                    const radialBase = bloom.length * (1 - Math.pow(1 - progress, 3));
+                    for (let s = 0; s < segs; s++) {
+                        const f = s / (segs - 1);
+                        const outward = radialBase * f;
+                        const lateral = bloom.amp * Math.sin(f * Math.PI) * radialBase * (0.6 + 0.4 * progress);
+                        const p = new THREE.Vector3().copy(bloom.spawnPos).add(forward.clone().multiplyScalar(outward)).add(spreadVec.clone().multiplyScalar(lateral));
+                        p.y += bloom.dropOffset || 0;
+                        posArr[s*3] = p.x; posArr[s*3+1] = p.y; posArr[s*3+2] = p.z;
+                    }
+                    posAttr.needsUpdate = true;
+                    if (bloom.mesh && bloom.mesh.material && bloom.mesh.material.color) bloom.mesh.material.color.lerp(new THREE.Color(0xff3b3b), progress * 0.9);
+                    if (bloom.elapsed > 3.0) { bloom.vy = (bloom.vy || 0) - 0.4 * deltaTime; bloom.dropOffset = (bloom.dropOffset || 0) + (bloom.vy) * deltaTime; }
+                    bloom.life -= deltaTime;
+                    if (bloom.life <= 0) { if (bloom.mesh) scene.remove(bloom.mesh); finalBloomParticles.splice(b, 1); }
+                }
                 // 固定視角
                 phi = THREE.MathUtils.degToRad(90 - lat); theta = THREE.MathUtils.degToRad(lon);
                 const target = new THREE.Vector3(Math.sin(phi)*Math.cos(theta), Math.cos(phi), Math.sin(phi)*Math.sin(theta));
                 resolvePlayerColliderOverlap();
-                camera.lookAt(target.add(camera.position)); updateCorridorVisibility(); renderer.render(scene, camera); return;
+                camera.lookAt(target.add(camera.position)); updateCorridorVisibility();
+                try { updateFlowerVisual(); } catch(e) {}
+                renderer.render(scene, camera); return;
             }
             // 若 dreamPhase 正在進行，減少輸入與顯示（簡單實作）
             if (dreamPhase) {
@@ -2993,16 +3575,38 @@
 
             if (gameState === 'AWAKE' || gameState === 'SLEEPING' || gameState === 'ENDING' || gameState === 'COLLAPSE') {
                 if (weaknessTimer > 0) weaknessTimer -= deltaTime;
+                // Consume accumulated mouse movement each frame for consistent smoothing
+                if (typeof rawMouseDX !== 'undefined') {
+                    const dx = rawMouseDX, dy = rawMouseDY;
+                    rawMouseDX = 0; rawMouseDY = 0;
+                    targetLon += dx * mouseSens;
+                    targetLat += dy * mouseSens;
+                    targetLat = Math.max(-85, Math.min(85, targetLat));
+                }
                 
-                // 更接近 FPS 的直接旋轉感：當正常 Awake 時使用高 lerp（接近 1）以減少平滑延遲
-                const lerp = (weaknessTimer > 0 || isCollapsing) ? 0.02 : 0.9; 
-                lon += (targetLon - lon) * lerp; lat += (targetLat - lat) * lerp;
+                // 更接近 FPS 的直接旋轉感：當正常 Awake 時使用高 lerp（近即時反應）
+                const baseLerp = (weaknessTimer > 0 || isCollapsing) ? 0.02 : 0.98;
+                // 若玩家正在凝視特定物件，減少慣性（更直接）
+                const isGazing = (gameState === 'AWAKE' && typeof currentGazedObject !== 'undefined' && currentGazedObject !== null);
+                const effectiveLerp = isGazing ? 1.0 : baseLerp;
+                // 平滑套用角度差，避免穿越 360° 導致瞬間翻轉
+                const diffLon = ((targetLon - lon + 540) % 360) - 180; // range [-180,180)
+                const applied = diffLon * effectiveLerp;
+                const maxStep = 60; // degrees per frame cap (increased to avoid per-frame clipping)
+                const step = Math.max(-maxStep, Math.min(maxStep, applied));
+                lon += step;
+                // 對俯仰角也加入每幀上限，避免垂直方向的大跳動
+                const latDiff = (targetLat - lat) * effectiveLerp;
+                const maxLatStep = 30; // larger vertical cap to avoid vertical stutter
+                const latStep = Math.max(-maxLatStep, Math.min(maxLatStep, latDiff));
+                lat += latStep;
                 phi = THREE.MathUtils.degToRad(90 - lat); theta = THREE.MathUtils.degToRad(lon);
                 const target = new THREE.Vector3(Math.sin(phi)*Math.cos(theta), Math.cos(phi), Math.sin(phi)*Math.sin(theta));
                 
                 if (gameState === 'AWAKE') {
                     let cFwd = moveForward, cRgt = moveRight;
-                    if (keys.w) cFwd = 0.15; if (keys.s) cFwd = -0.15; if (keys.a) cRgt = -0.15; if (keys.d) cRgt = 0.15;
+                    const baseSpeed = 0.15 * (gameSettings.moveSpeedScale || 1.0);
+                    if (keys.w) cFwd = baseSpeed; if (keys.s) cFwd = -baseSpeed; if (keys.a) cRgt = -baseSpeed; if (keys.d) cRgt = baseSpeed;
                     if (weaknessTimer > 0) { cFwd *= 0.5; cRgt *= 0.5; }
                     
                     if (cFwd !== 0 || cRgt !== 0) { 
@@ -3031,7 +3635,15 @@
                         if(stationaryTimer > 30.0) { unlockPoemFragment('P25'); }
                     }
 
-                    checkInteractions(deltaTime);
+                    // Throttle raycast-based gaze checks to reduce CPU: run ~15Hz
+                    const nowMs = performance.now();
+                    if (nowMs - lastRaycastTime >= RAYCAST_INTERVAL) {
+                        // divide by 4000 (i.e. /1000 then /4) so the effective dt passed
+                        // to checkInteractions approximates a single-frame dt
+                        const realDt = (nowMs - lastRaycastTime) / 4000;  // 除以 4
+                        checkInteractions(realDt);
+                        lastRaycastTime = nowMs;
+                    }
                     updateAnReaction();
                     
                     if(playerCognition.activeDelusions.length > 0 && Math.random() < 0.002) { 
@@ -3089,7 +3701,10 @@
                     sys.mesh.geometry.attributes.position.needsUpdate = true; sys.life--;
                     if(sys.life <= 0) { scene.remove(sys.mesh); activeBlood.splice(j, 1); }
                 }
+                updateVignetteForAcceptance();
+                updateAcceptanceTextMotion(deltaTime);
                 if (devPanel) updateDevPanel();
+                try { updateFlowerVisual(); } catch(e) {}
                 renderer.render(scene, camera);
             }
         }
