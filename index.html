@@ -3640,7 +3640,7 @@
                     if (nowMs - lastRaycastTime >= RAYCAST_INTERVAL) {
                         // divide by 4000 (i.e. /1000 then /4) so the effective dt passed
                         // to checkInteractions approximates a single-frame dt
-                        const realDt = (nowMs - lastRaycastTime) / 4000;  // 除以 4
+                        const realDt = (nowMs - lastRaycastTime) / 3000;  // 除以 4
                         checkInteractions(realDt);
                         lastRaycastTime = nowMs;
                     }
