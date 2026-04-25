@@ -15,7 +15,7 @@
         #envelope-canvas { width: min(80vw, 400px); height: min(50vh, 250px); display: block; z-index: 10; filter: drop-shadow(0 0 20px rgba(255,255,255,0.1)); }
         #typewriter-container { margin-top: 30px; min-height: 120px; width: 80%; max-width: 600px; text-align: center; z-index: 15; font-family: "Times New Roman", serif; pointer-events: none; }
         #typewriter-text { color: rgba(255, 255, 255, 0.7); font-size: 1.1rem; letter-spacing: 3px; line-height: 2.0; display: inline; white-space: pre-wrap; text-shadow: 0 0 8px rgba(255,255,255,0.2); }
-        #typewriter-cursor { display: inline-block; width: 2px; margin-left: 2px; color: rgba(255, 255, 255, 0.8); font-size: 1.2rem; animation: blink 1s step-end infinite; }
+        .typewriter-cursor, #typewriter-cursor { display: inline-block; width: 2px; margin-left: 2px; color: rgba(255, 255, 255, 0.8); font-size: 1.2rem; animation: blink 1s step-end infinite; }
         @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
         .intro-hint { position: absolute; bottom: 8%; color: rgba(255, 255, 255, 0.25); font-size: 0.8rem; letter-spacing: 6px; text-transform: uppercase; animation: breathe 4s ease-in-out infinite; z-index: 15; opacity: 0; transition: opacity 1s; }
         @keyframes breathe { 0%,100%{opacity:0.15;} 50%{opacity:0.5;} }
@@ -103,8 +103,9 @@
         /* diegetic note (in-world sticky note rendered in screen space) */
         #diegetic-note {
             position: fixed;
-            bottom: 12%;
-            left: 12%;
+            top: 50%;
+            left: 0%;
+            transform: translateY(-50%) rotate(-1deg);
             background: rgba(255, 248, 220, 0.08);
             color: rgba(255, 220, 180, 0.9);
             font-family: "Kaiti", "MingLiU", serif;
@@ -118,10 +119,37 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.6s ease, transform 0.6s ease;
-            transform: rotate(-1deg);
             z-index: 30;
         }
-        #diegetic-note.visible { opacity: 1; transform: rotate(0deg); }
+        #diegetic-note.visible { opacity: 1; transform: translateY(-50%) rotate(0deg); }
+
+        /* 結局按鈕統一樣式 */
+        .ending-btn {
+            display: inline-block;
+            margin-top: 12px;
+            margin-left: 0;
+            padding: 10px 18px;
+            font-size: 1.05rem;
+            border-radius: 6px;
+            cursor: pointer;
+            min-width: 220px;
+            box-sizing: border-box;
+            text-align: left;
+            background: transparent;
+            color: #ffdddd;
+            border: 1px solid #ff6666;
+        }
+        .ending-btn.primary {
+            background: #113;
+            color: #fff;
+            border-color: #226;
+        }
+        .ending-btn.secondary {
+            background: transparent;
+            color: #ffdddd;
+            border-color: #ff6666;
+        }
+        #ending-screen .ending-btn { display: block; }
 
         /* chromatic aberration layer for gaze intensity */
         #chromatic-layer {
@@ -259,7 +287,7 @@
         transform: translate(-50%, 8px);
         width: min(86%, 520px);
         color: #ffaaaa;
-        font-size: 14px;
+        font-size: 16px;
         letter-spacing: 1px;
         line-height: 1.45;
         text-align: center;
@@ -274,6 +302,15 @@
         opacity: 1;
         transform: translate(-50%, -2px);
     }
+
+    /* caption flash animation when gallery opens */
+    @keyframes captionFlash {
+        0% { opacity: 0; transform: translate(-50%, 8px) scale(0.98); }
+        10% { opacity: 1; transform: translate(-50%, -2px) scale(1.01); }
+        60% { opacity: 1; transform: translate(-50%, -2px) scale(1.00); }
+        100% { opacity: 0; transform: translate(-50%, 8px) scale(0.98); }
+    }
+    .hover-caption.flash { animation: captionFlash 2.2s ease forwards; }
 
     /* 第七幅畫的特權 (大尺寸 + 紅光) */
     .gallery-card.final-card {
@@ -306,7 +343,7 @@
 
     <div id="intro-screen">
         <div class="noise-bg"></div><canvas id="envelope-canvas"></canvas>
-        <div id="typewriter-container"><div id="typewriter-text"></div><div id="typewriter-cursor">_</div></div>
+        <div id="typewriter-container"><div id="typewriter-text"></div><div class="typewriter-cursor">_</div></div>
         <div class="intro-hint" id="intro-hint">點擊信封 睜開雙眼</div>
     </div>
 
@@ -335,7 +372,7 @@
     <div id="ui-layer"><button id="cough-btn">咳 嗽</button></div>
 
     <div id="letter-reading-screen">
-        <div><div id="letter-reading-text"></div><div id="typewriter-cursor" style="display:inline-block">_</div></div>
+        <div><div id="letter-reading-text"></div><div class="typewriter-cursor" style="display:inline-block">_</div></div>
         <div class="close-hint" id="letter-close-hint">點擊放下信件</div>
     </div>
 
@@ -367,10 +404,10 @@
             line-height: 1.4 !important;
         }
         #fragment-counter { font-weight: 600; }
-        #poem-overlay, #gallery-overlay, #letter-reading-screen { font-size: 20px !important; }
-        #gallery-overlay div { font-size: 20px !important; }
-        #poem-overlay div { font-size: 20px !important; }
-        #letter-reading-text { font-size: 20px !important; line-height: 1.7 !important; }
+        #poem-overlay, #gallery-overlay, #letter-reading-screen { font-size: 22px !important; }
+        #gallery-overlay div { font-size: 22px !important; }
+        #poem-overlay div { font-size: 22px !important; }
+        #letter-reading-text { font-size: 22px !important; line-height: 1.7 !important; }
         #dev-panel { font-size: 14px !important; }
         #intro-screen { font-size: 18px !important; }
     </style>
@@ -653,7 +690,7 @@
                 if (!this.masterGain && this.ctx) { this.masterGain = this.ctx.createGain(); this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime); this.masterGain.connect(this.ctx.destination); }
                 if (this.masterGain && this.ctx) {
                     const now = this.ctx.currentTime;
-                    try { this.masterGain.gain.cancelScheduledValues(now); } catch(e){}
+                    try { this.masterGain.gain.cancelScheduledValues(now); } catch(e){ try { console.warn('MusicEngine: cancelScheduledValues failed', e); } catch(_){} }
                     this.masterGain.gain.setValueAtTime(0, now);
                     this.masterGain.gain.linearRampToValueAtTime(this.baseVolume, now + 3.0);
                 }
@@ -717,7 +754,7 @@
                         this.pendingTimers = [];
                     }
                     if (this.timer) { clearTimeout(this.timer); this.timer = null; }
-                } catch (e) {}
+                } catch (e) { console.warn('MusicEngine.clearAllTimers failed', e); }
             }
         };
 
@@ -766,8 +803,8 @@
         // 供視覺化用的平滑相位狀態（避免直接使用高頻隨機導致眼睛不適）
         let acceptanceAnim = { phase: 0 };
 
-        // 線索鎖死記錄：當玩家過度咳血在誤解物件上，永久禁止該線索的正確版本
-        const lockedClues = new Set();
+        // 線索鎖死記錄：當玩家過度咳血在誤解物件上，預設為空集合（會在每日重置）
+        let lockedClues = new Set();
 
         // 矛盾狀態計數：用於觸發特別事件
         let contradictionLevel = 0;
@@ -785,6 +822,7 @@
         let dreamPhase = false;
         let dreamSceneGroup = null;
         let dreamAnimInterval = null;
+        let dreamTimeout = null;
         // 鏡子顯示與凝視計時
         let mirrorPlane = null;
         let mirrorPlaneMat = null;
@@ -961,12 +999,26 @@
             dreamSceneGroup.add(pG);
             scene.add(dreamSceneGroup);
 
-            // overlay DOM 白色模糊遮罩
+            // overlay DOM 白色模糊遮罩（可點擊跳過）
             let overlay = document.getElementById('dream-overlay');
             if (!overlay) {
                 overlay = document.createElement('div'); overlay.id = 'dream-overlay';
                 overlay.style.position = 'fixed'; overlay.style.left = '0'; overlay.style.top = '0'; overlay.style.width = '100%'; overlay.style.height = '100%';
-                overlay.style.background = 'rgba(255,255,255,0)'; overlay.style.pointerEvents = 'none'; overlay.style.transition = 'background 0.6s ease'; overlay.style.backdropFilter = 'blur(0px)';
+                overlay.style.background = 'rgba(255,255,255,0)'; overlay.style.pointerEvents = 'auto'; overlay.style.transition = 'background 0.6s ease'; overlay.style.backdropFilter = 'blur(0px)';
+                // skip hint (短暫顯示)
+                const skipHint = document.createElement('div');
+                skipHint.style.position = 'absolute'; skipHint.style.right = '6%'; skipHint.style.top = '6%'; skipHint.style.color = 'rgba(255,255,255,0.9)'; skipHint.style.fontSize = '14px'; skipHint.style.letterSpacing = '3px';
+                skipHint.innerText = '點擊跳過'; overlay.appendChild(skipHint);
+                // allow click to skip dream early
+                overlay.addEventListener('click', () => {
+                    if (dreamAnimInterval) { clearInterval(dreamAnimInterval); dreamAnimInterval = null; }
+                    if (dreamTimeout) { clearTimeout(dreamTimeout); dreamTimeout = null; }
+                    if (dreamSceneGroup) { try { scene.remove(dreamSceneGroup); } catch(e){ console.warn('Failed to remove dreamSceneGroup', e); } dreamSceneGroup = null; }
+                    overlay.style.background = 'rgba(255,255,255,0)'; overlay.style.backdropFilter = 'blur(0px)';
+                    dreamPhase = false; gameState = prevState === 'SLEEPING' ? 'SLEEPING' : 'AWAKE'; updateMusicForState();
+                    if (cb) cb();
+                    setTimeout(() => { try { overlay.remove(); } catch(e){ console.warn('Failed to remove dream overlay (click skip)', e); } }, 600);
+                });
                 document.body.appendChild(overlay);
             }
 
@@ -984,16 +1036,17 @@
 
             showEphemeralText('（妳跌入一個白色的記憶框）');
 
-            setTimeout(() => {
+            dreamTimeout = setTimeout(() => {
                 // end dream
                 if (dreamAnimInterval) { clearInterval(dreamAnimInterval); dreamAnimInterval = null; }
-                if (dreamSceneGroup) { scene.remove(dreamSceneGroup); dreamSceneGroup = null; }
-                if (overlay) { overlay.style.background = 'rgba(255,255,255,0)'; overlay.style.backdropFilter = 'blur(0px)'; setTimeout(() => { overlay.remove(); }, 600); }
+                    if (dreamSceneGroup) { try { scene.remove(dreamSceneGroup); } catch(e){ console.warn('Failed to remove dreamSceneGroup', e); } dreamSceneGroup = null; }
+                if (overlay) { overlay.style.background = 'rgba(255,255,255,0)'; overlay.style.backdropFilter = 'blur(0px)'; setTimeout(() => { try{ overlay.remove(); } catch(e){ console.warn('Failed to remove dream overlay', e); } }, 600); }
                 dreamPhase = false; gameState = prevState === 'SLEEPING' ? 'SLEEPING' : 'AWAKE';
                 updateMusicForState();
                 contradictionLevel = Math.max(0, contradictionLevel - 1);
                 if (typeof AudioEngine !== 'undefined' && AudioEngine.playChoke) AudioEngine.playChoke();
                 if (cb) cb();
+                dreamTimeout = null;
             }, duration);
         }
         let letterInstances = letterTemplates.map(t => new LetterInstance(t, t.day));
@@ -1027,6 +1080,21 @@
                     { text: "她一直在看著妳。", tag: "delusion" }
                 ],
                 isActive: false, delusionCount: 0, hasReckoned: false, fakeClue: { type: 'shadow', instance: null },
+                inspectProgress: 0, THRESH: 2.5, currentFragment: 0, delusionIndex: 0
+            },
+            window: {
+                target: 'window', day: 2,
+                fragments: [
+                    { text: "窗外的光沒有進來。", tag: "distance" },
+                    { text: "外面的世界在遠處，像一張紙。", tag: "boundary" },
+                    { text: "樓下的視線停在窗下，卻沒有進來。", tag: "presence" }
+                ],
+                delusionFragments: [
+                    { text: "窗外在對妳眨眼。", tag: "delusion" },
+                    { text: "它好像在叫妳。", tag: "delusion" },
+                    { text: "外面的人一直等著。", tag: "delusion" }
+                ],
+                isActive: false, delusionCount: 0, hasReckoned: false, fakeClue: { type: 'window_gaze', instance: null },
                 inspectProgress: 0, THRESH: 2.5, currentFragment: 0, delusionIndex: 0
             },
             footprints: {
@@ -1199,12 +1267,12 @@
             const txt = options[Math.floor(Math.random() * options.length)];
             el.innerText = txt; el.style.opacity = '1';
             // 觸發短暫的輕微抖動（glitch-like）動畫
-            try { el.classList.remove('cough-glitch'); } catch(e){}
+            try { el.classList.remove('cough-glitch'); } catch(e){ console.warn('Failed to remove cough-glitch class (start)', e); }
             // force reflow to restart animation
             void el.offsetWidth;
             el.classList.add('cough-glitch');
             // 移除動畫 class（在短抖動結束後）
-            setTimeout(() => { try { el.classList.remove('cough-glitch'); } catch(e){} }, 600);
+            setTimeout(() => { try { el.classList.remove('cough-glitch'); } catch(e){ console.warn('Failed to remove cough-glitch class (timeout)', e); } }, 600);
             if (coughSubTimer) clearTimeout(coughSubTimer);
             coughSubTimer = setTimeout(() => { el.style.opacity = '0'; coughSubTimer = null; }, 3500);
         }
@@ -1262,6 +1330,7 @@
                 counter.style.opacity = '0.85';
                 clearTimeout(counter._whisperTimer);
                 counter._whisperTimer = setTimeout(() => { counter.classList.remove('whisper'); counter.style.opacity = '0.3'; }, 4000);
+                try { saveGameState(); } catch (e) { console.warn('saveGameState failed in unlockPoemFragment', e); }
             }
         }
 
@@ -1489,6 +1558,154 @@
             { id: 'P26', text: "『再會。』聽見也好，沒有也罷。" }
         ];
 
+        // --- 記憶回溯系統（Memory Recall）
+        const MEMORY_RECALL_KEY = 'redflower_memory_recall_v1';
+
+        // 三階段提示資料（可複製自設計文件）
+        const fragmentHints = {
+            'P01': { poetic:'花瓶深處，有一句被忽略的開場白。', scene:'第一天，仔細看看桌上的花瓶。', direct:'Day 1，凝視花瓶直到三段文字跑完。' },
+            'P02': { poetic:'安寄來的第一句話，你讀完了嗎。', scene:'第一天，床頭櫃上有人留了一封信。', direct:'Day 1，打開信件並讀完全文。' },
+            'P03': { poetic:'第一次咳嗽的時候，有些東西碎了。', scene:'按下咳嗽鍵，任何時候都可以。', direct:'全時段，按下空白鍵或點擊咳嗽按鈕一次。' },
+            'P04': { poetic:'窗外有人在看，但看見的不是你。', scene:'第三天醒來後，走向窗邊。', direct:'Day 3 起床後，凝視窗戶超過 2 秒。' },
+            'P05': { poetic:'你對窗簾咳了血，也咳出了這句話。', scene:'第二天，對窗簾咳一次。', direct:'Day 2，先凝視窗簾，然後按下咳嗽鍵。' },
+            'P06': { poetic:'第三天，安問了一個你不敢回答的問題。', scene:'第三天的信裡藏著一個假設句。', direct:'Day 3，打開信件並讀完全文。' },
+            'P07': { poetic:'日曆上有一個圈，旁邊的字不是你寫的。', scene:'第五天，牆上的日曆有些不對勁。', direct:'Day 5，凝視日曆直到三段文字跑完。' },
+            'P08': { poetic:'房間崩塌過一次，你在廢墟裡撿到這句話。', scene:'第三天，讓自己崩潰一次。', direct:'Day 3 觸發崩壞事件並等待它結束。' },
+            'P09': { poetic:'咳到第五次的時候，你已經在騙自己了。', scene:'多咳幾次，它會浮現。', direct:'全時段，累計咳嗽達到 5 次。' },
+            'P10': { poetic:'有一天，你安靜地睡著了，沒有咳。', scene:'第二天，忍住不要咳嗽就去睡覺。', direct:'Day 2，當天不觸發任何咳嗽，直接凝視床上入睡。' },
+            'P11': { poetic:'你盯著那扇鎖著的門，看了很久。', scene:'多看看房間後方那扇門。', direct:'全時段，凝視門超過 2 秒，累計 3 次以上。' },
+            'P12': { poetic:'空白信紙上只有一個指紋，你把想說的話吞了回去。', scene:'第五天，讀完那封沒有字的信。', direct:'Day 5，打開信件並讀完全文。' },
+            'P13': { poetic:'遊戲還沒開始的時候，這句話就寫在那裡了。', scene:'回到最初的畫面，重新看一次。', direct:'開場時等待打字機動畫播放完畢，或點擊信封跳過。' },
+            'P14': { poetic:'你對窗外咳了一次，像是在拒絕誰的視線。', scene:'站在落地窗前，咳一次。', direct:'全時段，先凝視窗戶，然後按下咳嗽鍵。' },
+            'P15': { poetic:'鏡子裡的人安靜的時候，你只是看著。', scene:'第四天，鏡子會給你看一些不該看的東西。', direct:'Day 4，持續凝視鏡子直到觸發紅色打臉文字。' },
+            'P16': { poetic:'第四天的信，和上次讀到的不一樣。', scene:'第四天的信，讀完它，然後想一想。', direct:'Day 4，打開信件並讀完全文。若信件內容已改變，自動解鎖。' },
+            'P17': { poetic:'第五天醒來，日曆變紅了。', scene:'活到第五天就自然會看到。', direct:'Day 5 起床時自動獲得，無需操作。' },
+            'P18': { poetic:'你以為你聽見她了，但那只是回音。', scene:'對某個東西反覆咳到出現假訊息。', direct:'對同一個互動物件連續咳嗽 3 次觸發假成功訊息。' },
+            'P19': { poetic:'最後一封信，安說她夢見了你。', scene:'第七天，讀完安最後寫給你的話。', direct:'Day 7，打開信件並讀完全文。' },
+            'P20': { poetic:'你看著窗外，那裡什麼也沒有。', scene:'任何一天，站在落地窗前發呆一下。', direct:'全時段，凝視窗戶超過 3 秒。' },
+            'P21': { poetic:'你對著門咳了一次，門沒有開。', scene:'對著房間後方那扇門咳一次。', direct:'全時段，先凝視門，然後按下咳嗽鍵。' },
+            'P22': { poetic:'最後一夜，你躺下時想起了這句話。', scene:'第七天，上床睡覺。', direct:'Day 7，凝視床上入睡觸發。' },
+            'P23': { poetic:'紅色的字浮現的時候，你知道了。', scene:'讓系統打你一次臉。', direct:'觸發任何一個線索的 reckoning 機制。' },
+            'P24': { poetic:'故事結束的時候，這句話找到了你。', scene:'把故事走完一次。', direct:'觸發任一結局自動獲得。' },
+            'P25': { poetic:'你站著不動很久，久到聽見自己的呼吸。', scene:'在任何地方，停下來，什麼都別做。', direct:'AWAKE 狀態下不移動不轉視角，停留 30 秒。' },
+            'P26': { poetic:'最後一夜，有人在很遠的地方說了再見。', scene:'第七天，上床睡覺。', direct:'Day 7，凝視床上入睡觸發（與 P22 同時獲得）。' }
+        };
+
+        function loadMemoryRecallData() {
+            try {
+                const raw = localStorage.getItem(MEMORY_RECALL_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) { try { console.warn('loadMemoryRecallData failed', e); } catch(_){} }
+            return { completedRuns: 0, missedPerFragment: {} };
+        }
+
+        function saveMemoryRecallData(data) {
+            try { localStorage.setItem(MEMORY_RECALL_KEY, JSON.stringify(data)); } catch (e) { try { console.warn('saveMemoryRecallData failed', e); } catch(_){} }
+        }
+
+        function getHintForFragment(fragmentId) {
+            const data = loadMemoryRecallData();
+            const missCount = data.missedPerFragment[fragmentId] || 0;
+            const hints = fragmentHints[fragmentId];
+            if (!hints) return '——';
+            if (missCount === 0) return hints.poetic;
+            if (missCount === 1) return hints.scene;
+            return hints.direct;
+        }
+
+        function getStageText(data) {
+            const all = fragmentDetails.map(f => f.id);
+            const counts = { zero: 0, one: 0, twoplus: 0 };
+            for (const id of all) {
+                const m = (data.missedPerFragment && data.missedPerFragment[id]) || 0;
+                if (m === 0) counts.zero++; else if (m === 1) counts.one++; else counts.twoplus++;
+            }
+            if (counts.zero > counts.one && counts.zero > counts.twoplus) return '你剛剛經歷了第一次旅程。有些記憶需要反覆尋找才會浮現。';
+            if (counts.one > counts.zero && counts.one > counts.twoplus) return '第二次了。迷霧開始散開，但有些東西仍然模糊。';
+            return '你已經走了很多次。現在，讓事實清楚地顯現吧。';
+        }
+
+        function updateMemoryRecallOnEnding() {
+            try {
+                const data = loadMemoryRecallData();
+                data.completedRuns = (data.completedRuns || 0) + 1;
+                const allFragmentIds = fragmentDetails.map(f => f.id);
+
+                // Normalize collected fragments into a Set safely
+                let collectedArr = [];
+                try {
+                    if (playerCognition && playerCognition.collectedPoemFragments) {
+                        if (playerCognition.collectedPoemFragments instanceof Set) collectedArr = Array.from(playerCognition.collectedPoemFragments);
+                        else if (Array.isArray(playerCognition.collectedPoemFragments)) collectedArr = playerCognition.collectedPoemFragments;
+                    }
+                } catch (e) { console.warn('Reading playerCognition.collectedPoemFragments failed', e); }
+                const collected = new Set(collectedArr);
+
+                // Reset collected fragments' miss counts
+                for (const id of allFragmentIds) {
+                    if (collected.has(id)) data.missedPerFragment[id] = 0;
+                }
+
+                // Choose up to 6 missing fragments per run (cycled)
+                const missing = allFragmentIds.filter(id => !collected.has(id));
+                if (missing.length > 0) {
+                    data.nextBatchStart = data.nextBatchStart || 0;
+                    const batchSize = 6;
+                    const batchCount = Math.min(batchSize, missing.length);
+                    const batch = [];
+                    for (let i = 0; i < batchCount; i++) {
+                        const idx = (data.nextBatchStart + i) % missing.length;
+                        batch.push(missing[idx]);
+                    }
+                    batch.forEach(id => { data.missedPerFragment[id] = (data.missedPerFragment[id] || 0) + 1; });
+                    data.nextBatchStart = (data.nextBatchStart + batchCount) % missing.length;
+                }
+
+                saveMemoryRecallData(data);
+            } catch (e) { console.warn('updateMemoryRecallOnEnding failed', e); }
+        }
+
+        function showMemoryRecall() {
+            try { releasePointerLockForUI(); } catch (e) { console.warn('releasePointerLockForUI failed', e); }
+            const data = loadMemoryRecallData();
+            const overlay = document.createElement('div'); overlay.id = 'memory-recall-overlay';
+            overlay.style.position = 'fixed'; overlay.style.left = '0'; overlay.style.top = '0'; overlay.style.width = '100%'; overlay.style.height = '100%';
+            overlay.style.background = 'rgba(0,0,0,0.92)'; overlay.style.zIndex = '10010'; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column'; overlay.style.alignItems = 'center'; overlay.style.padding = '40px 20px'; overlay.style.overflowY = 'auto';
+
+            const title = document.createElement('div'); title.textContent = '記憶回溯 — 那些被遺落的時刻'; title.style.color = '#fff'; title.style.fontSize = '1.6rem'; title.style.letterSpacing = '4px'; title.style.marginBottom = '8px';
+            const stageText = document.createElement('div'); stageText.style.color = 'rgba(255,255,255,0.85)'; stageText.style.marginBottom = '18px'; stageText.style.opacity = '0.9'; stageText.textContent = getStageText(data);
+
+            const table = document.createElement('table'); table.style.width = '100%'; table.style.maxWidth = '980px'; table.style.borderCollapse = 'collapse'; table.style.color = '#fff';
+            const thead = document.createElement('thead'); const headRow = document.createElement('tr'); ['碎片','內容','它藏在哪裡','狀態'].forEach((h,i)=>{ const th=document.createElement('th'); th.innerText=h; th.style.textAlign='left'; th.style.padding='8px 10px'; th.style.fontSize='1rem'; if(i===0) th.style.width='8%'; if(i===1) th.style.width='35%'; if(i===2) th.style.width='42%'; if(i===3) th.style.width='15%'; headRow.appendChild(th); }); thead.appendChild(headRow); table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            for (const frag of fragmentDetails) {
+                const isCollected = playerCognition.collectedPoemFragments.has(frag.id);
+                const tr = document.createElement('tr'); tr.style.borderTop = '1px solid rgba(255,255,255,0.04)'; tr.style.padding = '6px 0';
+                const tdId = document.createElement('td'); tdId.innerText = frag.id; tdId.style.padding='8px 10px'; tdId.style.opacity = isCollected ? '0.95' : '0.6';
+                const tdContent = document.createElement('td'); tdContent.innerText = isCollected ? frag.text : '——'; tdContent.style.padding='8px 10px'; tdContent.style.opacity = isCollected ? '0.95' : '0.45';
+                const tdWhere = document.createElement('td'); tdWhere.innerText = isCollected ? (fragmentHints[frag.id]?.direct || '—') : getHintForFragment(frag.id); tdWhere.style.padding='8px 10px'; tdWhere.style.opacity = isCollected ? '0.95' : '0.9';
+                const tdStatus = document.createElement('td'); tdStatus.innerText = isCollected ? '✅' : '❌'; tdStatus.style.padding='8px 10px'; tdStatus.style.textAlign='center';
+                tr.appendChild(tdId); tr.appendChild(tdContent); tr.appendChild(tdWhere); tr.appendChild(tdStatus);
+                tbody.appendChild(tr);
+            }
+            table.appendChild(tbody);
+
+            const footer = document.createElement('div'); footer.style.marginTop = '18px'; footer.style.color = 'rgba(255,255,255,0.9)'; footer.style.fontSize = '1rem'; footer.textContent = `已收集：${playerCognition.collectedPoemFragments.size} / ${fragmentDetails.length}     你已經經歷了 ${data.completedRuns || 0} 次旅程`;
+
+            const closeBtn = document.createElement('button'); closeBtn.textContent = '返回結局畫面'; closeBtn.style.marginTop = '16px'; closeBtn.style.padding = '8px 12px'; closeBtn.style.cursor = 'pointer'; closeBtn.addEventListener('click', () => { try { const el = document.getElementById('memory-recall-overlay'); if (el && el.parentNode) el.parentNode.removeChild(el); } catch (e) { console.warn('Failed to remove memory recall overlay (closeBtn)', e); } try { document.removeEventListener('keydown', onRecallKey); } catch (e) { console.warn('Failed to remove onRecallKey listener (closeBtn)', e); } });
+
+            // Top-right close (escape-friendly)
+            const topClose = document.createElement('button'); topClose.textContent = '離開'; topClose.style.position = 'absolute'; topClose.style.right = '20px'; topClose.style.top = '20px'; topClose.style.padding = '6px 10px'; topClose.style.background = 'transparent'; topClose.style.border = '1px solid rgba(255,255,255,0.08)'; topClose.style.color = '#fff'; topClose.style.cursor = 'pointer';
+            topClose.addEventListener('click', () => { try { const el = document.getElementById('memory-recall-overlay'); if (el && el.parentNode) el.parentNode.removeChild(el); } catch (e) { console.warn('Failed to remove memory recall overlay (topClose)', e); } try { document.removeEventListener('keydown', onRecallKey); } catch (e) { console.warn('Failed to remove onRecallKey listener (topClose)', e); } });
+
+            function onRecallKey(ev) { if (ev.key === 'Escape') { try { const el = document.getElementById('memory-recall-overlay'); if (el && el.parentNode) el.parentNode.removeChild(el); } catch (e) { console.warn('Failed to remove memory recall overlay (onRecallKey)', e); } try { document.removeEventListener('keydown', onRecallKey); } catch (e) { console.warn('Failed to remove onRecallKey listener (onRecallKey)', e); } } }
+            document.addEventListener('keydown', onRecallKey);
+
+            overlay.appendChild(title); overlay.appendChild(stageText); overlay.appendChild(table); overlay.appendChild(footer); overlay.appendChild(closeBtn); overlay.appendChild(topClose);
+            document.body.appendChild(overlay);
+        }
+
         const introScreen = document.getElementById('intro-screen'), envelopeCanvas = document.getElementById('envelope-canvas'), envCtx = envelopeCanvas.getContext('2d');
         let introAnimFrame, introTypingLine = 0, introTypingChar = 0, isIntroTyping = true;
         const introLines = ["今天咳出了第三朵花。", "她們說那是血。", "我只看見紅色的朱槿。", "……", "我不會說話。", "但房間記得每一個字。"];
@@ -1575,6 +1792,7 @@
         });
         window.onload = () => {
             loadGameSettings();
+            loadGameState();
             applyGameSettings();
             introAnimFrame=requestAnimationFrame(animateEnvelope);
             setTimeout(typeIntro, 800);
@@ -1586,6 +1804,12 @@
         
         let coughedObjects = new Set(), windowGazeCount = 0, doorGazeCount = 0, currentGazedObject = null;
         let hasAnyReckoningOccurred = false, coughedAfterReckoning = false, isCollapsing = false, collapseTimer = 0;
+
+        // Gaze sticky / decay tuning
+        const GAZE_STICKY_WINDOW_MS = 450; // 若在此毫秒內回到同一物件，視為黏滯
+        const INSPECT_DECAY_RATE = 0.6; // 非凝視時，每秒衰減的進度量（秒）
+        let lastGazedObject = null; // 上次凝視的物件 id
+        let lastGazeLostAt = 0; // 上次失焦時間（ms）
 
         let lon = 90, lat = 0, phi = 0, theta = 0, targetLon = 90, targetLat = 0;
         // Accumulated raw mouse deltas (consumed each rAF) to avoid per-event clipping jitter
@@ -1745,6 +1969,28 @@
             updateDiegeticNote();
             triggerTaskForcedCough();
             showEphemeralText('小任務完成。妳被迫咳了一次，去睡覺。');
+
+            // 簡單視覺回饋：依目標物件給予小動畫或狀態變更
+            try {
+                const t = currentDailyTask.target;
+                if (t === 'curtain') {
+                    const c = interactableProps['curtain']?.mesh;
+                    if (c) { c.visible = false; }
+                } else if (t === 'mirror') {
+                    if (mirrorPlaneMat) { mirrorPlaneMat.opacity = 1.0; mirrorPlaneMat.needsUpdate = true; }
+                    if (mirrorPlane) mirrorPlane.visible = true;
+                } else if (t === 'footprints') {
+                    const f = interactableProps['footprints']?.mesh; if (f) f.visible = false;
+                } else if (t === 'vase') {
+                    const v = interactableProps['vase']?.mesh; if (v && typeof THREE !== 'undefined') {
+                        const flower = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff6666 }));
+                        flower.position.set(0, 1.6, 0.2);
+                        v.add(flower);
+                    }
+                }
+            } catch (e) { console.warn('Complete daily task UI update failed', e); }
+
+            try { saveGameState(); } catch (e) { console.warn('saveGameState failed after completing daily task', e); }
         }
 
         function initGame() {
@@ -2055,19 +2301,32 @@
                 const loadMirrorTexture = (url, key, fallbackMsg) => {
                     const loader = new THREE.TextureLoader();
                     loader.load(url, (texture) => {
-                        texture.minFilter = THREE.LinearFilter;
-                        texture.magFilter = THREE.LinearFilter;
-                        mirrorTextures[key] = texture;
-                        // 當兩張都載入完畢，先顯示 normal
-                        if (mirrorTextures.normal && mirrorTextures.cry) {
-                            mirrorPlane.material.map = mirrorTextures.normal;
-                            mirrorPlane.material.opacity = 0.16;
-                            mirrorPlane.material.depthWrite = false;
-                            mirrorPlane.material.needsUpdate = true;
-                            mirrorPlane.material.color = new THREE.Color(0x888888);
-                            mirrorPlaneMat = mirrorPlane.material;
-                            if (mirrorPlane && mirrorPlane.scale.x !== 1) mirrorPlane.scale.x = 1;
-                        }
+                        try {
+                            texture.minFilter = THREE.LinearFilter;
+                            texture.magFilter = THREE.LinearFilter;
+                            // Ensure consistent orientation for mirror textures: avoid vertical inversion
+                            try { texture.flipY = false; } catch(e) {}
+                            try { if (texture.repeat && typeof texture.repeat.set === 'function') texture.repeat.set(-1, 1); } catch(e) {}
+                            try { if (!texture.center) texture.center = new THREE.Vector2(0.5, 0.5); else texture.center.set(0.5, 0.5); } catch(e) {}
+                            try { texture.needsUpdate = true; } catch(e) {}
+                            mirrorTextures[key] = texture;
+                            // 當兩張都載入完畢，先顯示 normal
+                            if (mirrorTextures.normal && mirrorTextures.cry) {
+                                const m = mirrorTextures.normal;
+                                try { m.flipY = false; } catch(e) {}
+                                try { if (m.repeat && typeof m.repeat.set === 'function') m.repeat.set(-1, 1); } catch(e) {}
+                                try { if (!m.center) m.center = new THREE.Vector2(0.5, 0.5); else m.center.set(0.5, 0.5); } catch(e) {}
+                                try { m.needsUpdate = true; } catch(e) {}
+                                mirrorPlane.material.map = m;
+                                mirrorPlane.material.opacity = 0.16;
+                                mirrorPlane.material.depthWrite = false;
+                                mirrorPlane.material.needsUpdate = true;
+                                mirrorPlane.material.color = new THREE.Color(0x888888);
+                                mirrorPlaneMat = mirrorPlane.material;
+                                // ensure plane scale is default
+                                if (mirrorPlane && mirrorPlane.scale && mirrorPlane.scale.x !== 1) mirrorPlane.scale.x = 1;
+                            }
+                        } catch (e) { console.warn('mirror texture load processing failed', e); }
                     }, undefined, () => {
                         console.warn(`鏡中影像載入失敗：${url}`);
                         if (!mirrorTextures[key]) applyMirrorFallbackTexture(fallbackMsg);
@@ -2161,16 +2420,26 @@
 
         let typeReadInt;
         function checkInteractions(dt) {
-            if (gameState !== 'AWAKE') return;
-            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-            const hits = raycaster.intersectObjects([bedHitbox, letterHitbox, windowHitbox, doorHitbox, ...Object.values(interactableProps).map(p=>p.hb)]);
+                    if (gameState !== 'AWAKE') return;
+                    // 記錄上一個 frame 的 gaze（用於黏滯判定）
+                    const prevGazed = currentGazedObject;
+                    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+                    const hits = raycaster.intersectObjects([bedHitbox, letterHitbox, windowHitbox, doorHitbox, ...Object.values(interactableProps).map(p=>p.hb)]);
             
-            const hint = document.getElementById('interaction-hint'), prog = document.getElementById('gaze-progress'), ret = document.getElementById('reticle'), infText = document.getElementById('inference-text');
-            currentGazedObject = null;
+                    const hint = document.getElementById('interaction-hint'), prog = document.getElementById('gaze-progress'), ret = document.getElementById('reticle'), infText = document.getElementById('inference-text');
+                    currentGazedObject = null;
 
             if (hits.length > 0) {
                 const target = hits[0].object.userData.id;
                 currentGazedObject = target;
+                // Gaze sticky: 若剛剛短暫失焦且回到同一物件（< GAZE_STICKY_WINDOW_MS），保留 inspectProgress 不重置
+                if (lastGazedObject && lastGazedObject === target && lastGazeLostAt && (Date.now() - lastGazeLostAt) < GAZE_STICKY_WINDOW_MS) {
+                    // 回到同一物件於黏滯窗內，清除失焦時間但不重置進度
+                    lastGazeLostAt = 0;
+                }
+                // 更新上次凝視物件記錄
+                lastGazedObject = target;
+                lastGazeLostAt = 0;
                 ret.style.transform = 'translate(-50%, -50%) scale(1.5)'; ret.style.backgroundColor = '#fff';
                 if (currentDailyTask && !currentDailyTask.completed && target === currentDailyTask.target) {
                     hint.innerText = `按 E：${currentDailyTask.actionText}`;
@@ -2202,7 +2471,16 @@
                 }
                 else if (target === 'window') {
                     gazeTimer += dt;
-                    if(gazeTimer > 3.0 && windowGazeCount < currentDay) { windowGazeCount++; gazeTimer = -5; unlockPoemFragment('P20'); }
+                    // Provide immediate feedback for the visually prominent window
+                    const infText = document.getElementById('inference-text');
+                    if (infText) { infText.innerText = '窗外的光沒有進來。'; infText.style.opacity = '1'; }
+                    // 新增：Day 3 起床後凝視窗戶超過 2 秒解鎖 P04
+                    try {
+                        if (gameState === 'AWAKE' && currentDay === 3 && gazeTimer >= 2.0 && !playerCognition.collectedPoemFragments.has('P04')) {
+                            unlockPoemFragment('P04');
+                        }
+                    } catch (e) { console.warn('Window gaze P04 check failed', e); }
+                    if (gazeTimer > 3.0 && windowGazeCount < currentDay) { windowGazeCount++; gazeTimer = -5; unlockPoemFragment('P20'); }
                 }
                 else if (target === 'door') {
                     gazeTimer += dt;
@@ -2317,8 +2595,18 @@
                     }
                 }
             } else {
+                // 失去凝視：啟動衰減而非直接歸零（增加可寬容度），並記錄最後失焦物件以支援黏滯
                 gazeTimer = 0; letterReadTimer = 0; AudioEngine.stopHeartbeat();
-                if(Object.values(emotionalClues).some(o => o.inspectProgress > 0)) Object.values(emotionalClues).forEach(o => o.inspectProgress = 0);
+                if (prevGazed) { lastGazedObject = prevGazed; lastGazeLostAt = Date.now(); }
+                // 緩慢衰減 inspectProgress（以秒為單位的 dt）
+                try {
+                    Object.values(emotionalClues).forEach(o => {
+                        if (o && o.inspectProgress && o.inspectProgress > 0) {
+                            o.inspectProgress = Math.max(0, o.inspectProgress - dt * INSPECT_DECAY_RATE);
+                        }
+                    });
+                } catch (e) { console.warn('Failed to decay emotionalClues inspectProgress', e); }
+
                 hint.style.opacity = '0'; prog.style.opacity = '0'; infText.style.opacity = '0';
                 ret.style.transform = 'translate(-50%, -50%) scale(1)'; ret.style.backgroundColor = 'rgba(255,255,255,0.5)';
             }
@@ -2331,67 +2619,125 @@
         let lastLetterChanged = false; // 新增：用於記錄錯亂提示
 
         function openLetter(day) {
-            releasePointerLockForUI();
-            gameState = 'READING'; AudioEngine.playPaper(); currentReadingDay = day;
-            const sc = document.getElementById('letter-reading-screen'), txtEl = document.getElementById('letter-reading-text');
-            txtEl.innerText = ""; sc.style.display = 'flex'; setTimeout(() => sc.style.opacity = '1', 50);
-            
+            // 更謹慎地清理舊的打字機計時器
+            try {
+                if (typeof typeReadInt !== 'undefined' && typeReadInt != null) {
+                    try { clearInterval(typeReadInt); } catch (e2) { console.warn('clearInterval failed for typeReadInt', e2); }
+                    typeReadInt = null;
+                }
+            } catch (e) { console.warn('Failed to clear typeReadInt', e); }
+
+            try { releasePointerLockForUI(); } catch (e) { console.warn('releasePointerLockForUI failed', e); }
+            gameState = 'READING'; if (AudioEngine && AudioEngine.playPaper) try { AudioEngine.playPaper(); } catch(e){ console.warn('AudioEngine.playPaper failed', e); }
+            currentReadingDay = day;
+
+            const sc = document.getElementById('letter-reading-screen');
+            const txtEl = document.getElementById('letter-reading-text');
+            if (!sc || !txtEl) { console.warn('openLetter: missing UI elements', { sc: !!sc, txtEl: !!txtEl }); return; }
+            try { txtEl.innerText = ""; sc.style.display = 'flex'; setTimeout(() => { try { sc.style.opacity = '1'; } catch(e){} }, 50); } catch(e) { console.warn('openLetter failed to show UI', e); }
+
             // 若當日有矛盾的線索，顯示短暫閃爍提示
-            let activeContradiction = Object.values(emotionalClues).find(c => c.isContradicting && c.day === currentDay);
-            if (activeContradiction) showEphemeralText('（記憶閃爍…）');
+            try {
+                let activeContradiction = Object.values(emotionalClues || {}).find(c => c && c.isContradicting && c.day === currentDay);
+                if (activeContradiction) showEphemeralText('（記憶閃爍…）');
 
-            // 檢查是否有被激活的誤解（需要先觸發打臉）
-            let activeOdd = Object.values(emotionalClues).find(c => c.isActive && c.day === currentDay);
-            if (activeOdd) { triggerUncertainty(activeOdd); }
+                // 檢查是否有被激活的誤解（需要先觸發打臉）
+                let activeOdd = Object.values(emotionalClues || {}).find(c => c && c.isActive && c.day === currentDay);
+                if (activeOdd) { triggerUncertainty(activeOdd); }
+            } catch(e) { console.warn('openLetter: emotionalClues handling failed', e); }
 
-            const letter = letterInstances[day-1];
-            const state = { activeDelusions: playerCognition.activeDelusions, hasAnyReckoningOccurred, acceptance, currentDay, trustLevel: playerCognition.trustLevel, memoryDecayCounter: playerCognition.memoryDecayCounter };
-            const segs = letter.getCurrentSegments(state);
-            
+            let letter;
+            try { letter = letterInstances && letterInstances[day-1]; } catch(e) { console.warn('openLetter: letterInstances access failed', e); }
+            if (!letter || typeof letter.getCurrentSegments !== 'function') { console.warn('openLetter: invalid letter instance for day', day); return; }
+
+            const state = { activeDelusions: (playerCognition && playerCognition.activeDelusions) || [], hasAnyReckoningOccurred, acceptance, currentDay, trustLevel: (playerCognition && playerCognition.trustLevel) || 0, memoryDecayCounter: (playerCognition && playerCognition.memoryDecayCounter) || 0 };
+            let segs = [];
+            try { segs = letter.getCurrentSegments(state) || []; } catch(e) { console.warn('letter.getCurrentSegments failed', e); segs = []; }
+
             lastLetterChanged = false;
-            if (letter.lastReadSnapshot && JSON.stringify(segs) !== JSON.stringify(letter.lastReadSnapshot)) {
-                lastLetterChanged = true;
-                AudioEngine.playTapeWobble(); 
-                document.getElementById('canvas-container').classList.add('ghost-room-effect');
-                setTimeout(() => document.getElementById('canvas-container').classList.remove('ghost-room-effect'), 500);
-                if(day===4) unlockPoemFragment('P16');
-            }
-            letter.lastReadSnapshot = segs; letter.readCount++;
+            try {
+                if (letter.lastReadSnapshot && JSON.stringify(segs) !== JSON.stringify(letter.lastReadSnapshot)) {
+                    lastLetterChanged = true;
+                    if (AudioEngine && AudioEngine.playTapeWobble) try { AudioEngine.playTapeWobble(); } catch(e){}
+                    const canvasContainer = document.getElementById('canvas-container'); if (canvasContainer) {
+                        canvasContainer.classList.add('ghost-room-effect');
+                        setTimeout(() => { try { canvasContainer.classList.remove('ghost-room-effect'); } catch(e){} }, 500);
+                    }
+                    if (day === 4 && typeof unlockPoemFragment === 'function') unlockPoemFragment('P16');
+                }
+            } catch (e) { console.warn('openLetter: lastReadSnapshot check failed', e); }
+            try { letter.lastReadSnapshot = segs; letter.readCount = (letter.readCount || 0) + 1; } catch(e){}
 
-            let fullText = (segs[0] && segs[0].senderOverride) ? `${segs[0].senderOverride}：\n` : (letter.template.sender ? `${letter.template.sender}：\n` : "");
-            segs.forEach(s => fullText += s.text + "\n");
-            fullLetterContentToType = fullText;
+            let fullText = '';
+            try { fullText = (segs[0] && segs[0].senderOverride) ? `${segs[0].senderOverride}：\n` : (letter.template && letter.template.sender ? `${letter.template.sender}：\n` : ''); segs.forEach(s => { fullText += (s && s.text) ? s.text + '\n' : ''; }); fullLetterContentToType = fullText; } catch(e) { console.warn('openLetter: composing full text failed', e); fullLetterContentToType = ''; }
 
             let charIdx = 0;
-            typeReadInt = setInterval(() => {
-                if(charIdx < fullLetterContentToType.length) txtEl.innerText += fullLetterContentToType[charIdx++];
-                else { 
-                    clearInterval(typeReadInt); typeReadInt = null;
-                    document.getElementById('letter-close-hint').style.opacity = '1'; 
-                    if(day===1) unlockPoemFragment('P02'); if(day===3 && fullLetterContentToType.includes('如果她說')) unlockPoemFragment('P06'); if(day===7) unlockPoemFragment('P19');
-                }
-            }, 50);
+            try {
+                const closeHintEl = document.getElementById('letter-close-hint');
+                typeReadInt = setInterval(() => {
+                    try {
+                        if (charIdx < (fullLetterContentToType || '').length) txtEl.innerText += fullLetterContentToType[charIdx++];
+                        else {
+                            try { clearInterval(typeReadInt); } catch (ee) { console.warn('clearInterval failed at type end', ee); }
+                            typeReadInt = null;
+                            if (closeHintEl) try { closeHintEl.style.opacity = '1'; } catch(e){}
+                            try {
+                                if (day === 1 && typeof unlockPoemFragment === 'function') unlockPoemFragment('P02');
+                                if (day === 3 && typeof unlockPoemFragment === 'function' && (fullLetterContentToType || '').includes('如果她說')) unlockPoemFragment('P06');
+                                if (day === 5 && typeof unlockPoemFragment === 'function') unlockPoemFragment('P12');
+                                if (day === 7 && typeof unlockPoemFragment === 'function') unlockPoemFragment('P19');
+                            } catch (eUnlock) { console.warn('openLetter: unlockPoemFragment failed', eUnlock); }
+                        }
+                    } catch (eStep) { console.warn('openLetter type interval step failed', eStep); }
+                }, 50);
+            } catch (eStart) { console.warn('openLetter: failed to start type interval', eStart); }
         }
 
         function closeLetter() {
-            if(gameState !== 'READING') return; 
-            
-            if(typeReadInt) {
-                clearInterval(typeReadInt); typeReadInt = null;
-                document.getElementById('letter-reading-text').innerText = fullLetterContentToType;
-                document.getElementById('letter-close-hint').style.opacity = '1';
-                
-                if(currentReadingDay===1) unlockPoemFragment('P02'); 
-                if(currentReadingDay===3 && fullLetterContentToType.includes('如果她說')) unlockPoemFragment('P06'); 
-                if(currentReadingDay===7) unlockPoemFragment('P19');
-                return; 
-            }
+            // 強制清理打字機計時器，並立刻顯示全文（不打斷關閉動畫）
+            try {
+                try {
+                    if (typeof typeReadInt !== 'undefined' && typeReadInt != null) {
+                        try { clearInterval(typeReadInt); } catch (e2) { console.warn('clearInterval failed in closeLetter', e2); }
+                        typeReadInt = null;
+                    }
+                } catch (ee) { console.warn('Error while clearing typeReadInt in closeLetter', ee); }
 
-            const sc = document.getElementById('letter-reading-screen'); sc.style.opacity = '0'; document.getElementById('letter-close-hint').style.opacity = '0'; AudioEngine.playPaper();
-            setTimeout(() => { 
-                sc.style.display = 'none'; gameState = 'AWAKE'; updateMusicForState();
-                // 新增：信件關閉後，若內容改變，顯示錯亂提示
-                if(lastLetterChanged) setTimeout(() => showEphemeralText("（信好像和上次讀的不一樣。）"), 500);
+                const txtEl = document.getElementById('letter-reading-text');
+                if (txtEl) {
+                    try { txtEl.innerText = fullLetterContentToType || ''; } catch(e3) { console.warn('Failed to set letter-reading-text innerText', e3); }
+                }
+
+                try {
+                    if (typeof unlockPoemFragment === 'function') {
+                        if (currentReadingDay === 1) unlockPoemFragment('P02');
+                        if (currentReadingDay === 3 && (fullLetterContentToType || '').includes('如果她說')) unlockPoemFragment('P06');
+                        if (currentReadingDay === 5) unlockPoemFragment('P12');
+                        if (currentReadingDay === 7) unlockPoemFragment('P19');
+                    }
+                } catch(eUnlock) { console.warn('unlockPoemFragment failed in closeLetter', eUnlock); }
+                // 不再 return，繼續後面的關閉流程
+            } catch (e) { console.warn('Failed during forced letter full-display cleanup', e); }
+
+            // 防止重複關閉（若已經在關閉中）
+            if (gameState !== 'READING') return;
+
+            const sc = document.getElementById('letter-reading-screen');
+            sc.style.opacity = '0';
+            document.getElementById('letter-close-hint').style.opacity = '0';
+            AudioEngine.playPaper();
+
+            // 立刻鎖定狀態，避免關閉過程中再次觸發任何互動
+            gameState = 'CLOSING';
+
+            setTimeout(() => {
+                sc.style.display = 'none';
+                gameState = 'AWAKE';
+                updateMusicForState();
+                // 若內容曾改變，顯示錯亂提示
+                if (lastLetterChanged) {
+                    setTimeout(() => showEphemeralText("（信好像和上次讀的不一樣。）"), 500);
+                }
             }, 1000);
         }
 
@@ -2444,7 +2790,7 @@
 
             requestShake(1.2); coughCountToday++; totalCoughCount++; weaknessTimer = 5.0; AudioEngine.playScrape();
             // 顯示咳嗽後的右下內心字幕
-            try { showCoughSubtitleOnce(); } catch (e) {}
+            try { showCoughSubtitleOnce(); } catch (e) { console.warn('showCoughSubtitleOnce failed', e); }
             if(totalCoughCount===1) unlockPoemFragment('P03');
             if(totalCoughCount>5) unlockPoemFragment('P09');
             
@@ -2552,6 +2898,9 @@
             const ns = document.getElementById('night-screen'), pb = document.getElementById('sleep-progress-bar');
             ns.style.display = 'flex'; setTimeout(() => ns.style.opacity = '1', 50);
             currentDay++; document.getElementById('day-title').innerText = `Day ${currentDay}`;
+            // 每日重置被拒絕的線索，讓玩家在新的一天可以重新面對同一個物件
+            try { if (lockedClues && typeof lockedClues.clear === 'function') lockedClues.clear(); } catch(e) { console.warn('lockedClues.clear failed', e); }
+            try { saveGameState(); } catch (e) { console.warn('saveGameState failed in enterNightMode', e); }
             pb.style.width = '0%'; setTimeout(() => { pb.style.width = '100%'; }, 500);
                 // 顯示簡短敘事提示：讓玩家知道這個進度條是「意識流失」的隱喻
                 const sleepHintEl = document.getElementById('sleep-hint');
@@ -2623,22 +2972,24 @@
 
         // Spawn a floral bloom made of many thin line-petals that expand then gently fall.
         function spawnFinalBloom() {
-            if (!scene || !camera) return;
-            const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
-            const spawnPos = camera.position.clone().add(dir.clone().multiplyScalar(2)); spawnPos.y -= 0.6;
-            const nPetals = 50; const arcs = 5; const segs = 8;
-            for (let i = 0; i < nPetals; i++) {
-                const baseAngle = (i % arcs) * (Math.PI * 2 / arcs);
-                const theta = baseAngle + (Math.random() - 0.5) * 0.4;
-                const length = 1.2 + Math.random() * 1.6;
-                const amp = 0.25 + Math.random() * 0.6;
-                const posArr = new Float32Array(segs * 3);
-                for (let j = 0; j < segs; j++) { posArr[j*3] = spawnPos.x; posArr[j*3+1] = spawnPos.y; posArr[j*3+2] = spawnPos.z; }
-                const geo = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(posArr, 3));
-                const mat = new THREE.LineBasicMaterial({ color: 0x600000, transparent: true, opacity: 1.0 });
-                const line = new THREE.Line(geo, mat); scene.add(line);
-                finalBloomParticles.push({ mesh: line, theta: theta, length: length, amp: amp, segs: segs, elapsed: 0, dropOffset: 0, vy: -0.0, spawnPos: spawnPos.clone(), life: 8.0 });
-            }
+            try {
+                if (!scene || !camera) return;
+                const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+                const spawnPos = camera.position.clone().add(dir.clone().multiplyScalar(2)); spawnPos.y -= 0.6;
+                const nPetals = 50; const arcs = 5; const segs = 8;
+                for (let i = 0; i < nPetals; i++) {
+                    const baseAngle = (i % arcs) * (Math.PI * 2 / arcs);
+                    const theta = baseAngle + (Math.random() - 0.5) * 0.4;
+                    const length = 1.2 + Math.random() * 1.6;
+                    const amp = 0.25 + Math.random() * 0.6;
+                    const posArr = new Float32Array(segs * 3);
+                    for (let j = 0; j < segs; j++) { posArr[j*3] = spawnPos.x; posArr[j*3+1] = spawnPos.y; posArr[j*3+2] = spawnPos.z; }
+                    const geo = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+                    const mat = new THREE.LineBasicMaterial({ color: 0x600000, transparent: true, opacity: 1.0 });
+                    const line = new THREE.Line(geo, mat); scene.add(line);
+                    finalBloomParticles.push({ mesh: line, theta: theta, length: length, amp: amp, segs: segs, elapsed: 0, dropOffset: 0, vy: -0.0, spawnPos: spawnPos.clone(), life: 8.0 });
+                }
+            } catch (e) { console.warn('spawnFinalBloom internal error', e); }
         }
 
         function showFinalLine1() {
@@ -2737,6 +3088,7 @@
             es.style.display = 'flex'; setTimeout(()=>es.style.opacity = '1', 100);
 
             let endingData = generateEnding(); unlockPoemFragment('P24');
+            try { updateMemoryRecallOnEnding(); } catch (e) { console.warn('updateMemoryRecallOnEnding failed (triggerEnding)', e); }
             let charIdx = 0;
             
             setTimeout(() => { 
@@ -2773,31 +3125,30 @@
                                 et.appendChild(document.createElement('div')).appendChild(btn);
                             }
                         }, 2600);
-                        // 新增記憶畫廊按鈕
+                        // 新增：記憶畫廊按鈕、記憶回溯按鈕
                         setTimeout(() => {
                             const galleryBtn = document.createElement('button');
                             galleryBtn.textContent = '記憶畫廊 (B)';
-                            galleryBtn.style.marginTop = '12px'; galleryBtn.style.padding = '8px 14px';
-                            galleryBtn.style.background = '#220000'; galleryBtn.style.color = '#ffdddd';
-                            galleryBtn.style.border = '1px solid #ff6666'; galleryBtn.style.cursor = 'pointer';
+                            galleryBtn.className = 'ending-btn secondary';
                             galleryBtn.addEventListener('click', () => showMemoryGallery());
                             et.appendChild(document.createElement('div')).appendChild(galleryBtn);
+
+                            const recallBtn = document.createElement('button');
+                            recallBtn.id = 'memory-recall-btn';
+                            recallBtn.textContent = '記憶回溯';
+                            recallBtn.className = 'ending-btn primary';
+                            recallBtn.addEventListener('click', () => showMemoryRecall());
+                            et.appendChild(document.createElement('div')).appendChild(recallBtn);
                         }, 2800);
                         // 新增：重玩按鈕
                         setTimeout(() => {
+                            // 重玩（清除本地存檔）
                             const replayBtn = document.createElement('button');
-                            replayBtn.textContent = '重玩一遍';
-                            replayBtn.style.marginTop = '12px'; replayBtn.style.padding = '8px 14px';
-                            replayBtn.style.background = '#220000'; replayBtn.style.color = '#ffdddd';
-                            replayBtn.style.border = '1px solid #ff6666'; replayBtn.style.cursor = 'pointer';
+                            replayBtn.textContent = '重玩（清除記憶）';
+                            replayBtn.className = 'ending-btn secondary';
                             replayBtn.addEventListener('click', () => {
-                                // 嘗試清理 ending-screen，避免舊畫面殘留
                                 const es = document.getElementById('ending-screen');
-                                if (es) {
-                                    es.style.display = 'none';
-                                    es.style.opacity = '0';
-                                }
-                                // 重置鏡中平面的變換，確保新一局從乾淨狀態開始
+                                if (es) { es.style.display = 'none'; es.style.opacity = '0'; }
                                 if (mirrorPlane) {
                                     mirrorPlane.scale.x = 1;
                                     if (mirrorPlane.material && mirrorPlane.material.map) {
@@ -2805,10 +3156,17 @@
                                         mirrorPlane.material.map.needsUpdate = true;
                                     }
                                 }
-                                // 稍微延遲確保 DOM 完全隱藏後再重載
+                                try { localStorage.removeItem('redflower_game_state_v1'); localStorage.removeItem('redflower_game_settings_v1'); } catch (e) { console.warn('Failed to clear localStorage backups', e); }
                                 setTimeout(() => { window.location.reload(); }, 50);
                             });
                             et.appendChild(document.createElement('div')).appendChild(replayBtn);
+
+                            // 保留記憶重新開始（快速重載，載入已保留進度）
+                            const keepBtn = document.createElement('button');
+                            keepBtn.textContent = '保留記憶重新開始';
+                            keepBtn.className = 'ending-btn primary';
+                            keepBtn.addEventListener('click', () => { window.location.reload(); });
+                            et.appendChild(document.createElement('div')).appendChild(keepBtn);
                         }, 3000);
                     }
                 }, 80); 
@@ -2829,7 +3187,7 @@
         }
 
         const DEFAULT_GAME_SETTINGS = {
-            uiScale: 1.2,
+            uiScale: 1.3,
             musicVolume: 50,
             sfxVolume: 80,
             muted: false,
@@ -2852,8 +3210,62 @@
         }
 
         function saveGameSettings() {
-            try { localStorage.setItem('redflower_game_settings_v1', JSON.stringify(gameSettings)); } catch (_) {}
+            try { localStorage.setItem('redflower_game_settings_v1', JSON.stringify(gameSettings)); } catch (e) { try { console.warn('saveGameSettings failed', e); } catch(_){} }
         }
+
+                // --- Persist core game state (player progress, day, acceptance, locked clues) ---
+                function saveGameState() {
+                    try {
+                        // Safely serialize known structures; tolerate missing globals
+                        let collected = [];
+                        try {
+                            if (playerCognition && playerCognition.collectedPoemFragments) {
+                                if (playerCognition.collectedPoemFragments instanceof Set) collected = Array.from(playerCognition.collectedPoemFragments);
+                                else if (Array.isArray(playerCognition.collectedPoemFragments)) collected = playerCognition.collectedPoemFragments;
+                            }
+                        } catch (e) { console.warn('Reading collectedPoemFragments failed', e); }
+
+                        let locked = [];
+                        try {
+                            if (lockedClues) {
+                                if (lockedClues instanceof Set) locked = Array.from(lockedClues);
+                                else if (Array.isArray(lockedClues)) locked = lockedClues;
+                            }
+                        } catch (e) { console.warn('Reading lockedClues failed', e); }
+
+                        const payload = {
+                            currentDay: typeof currentDay === 'number' ? currentDay : 1,
+                            acceptance: typeof acceptance === 'number' ? acceptance : 50,
+                            collectedPoemFragments: collected,
+                            lockedClues: locked,
+                            totalCoughCount: totalCoughCount || 0
+                        };
+                        try { localStorage.setItem('redflower_game_state_v1', JSON.stringify(payload)); }
+                        catch (e) { console.warn('saveGameState localStorage.setItem failed', e); }
+                    } catch (e) { console.warn('saveGameState failed', e); }
+                }
+
+                function loadGameState() {
+                    try {
+                        const raw = localStorage.getItem('redflower_game_state_v1');
+                        if (!raw) return;
+                        const parsed = JSON.parse(raw);
+                        if (parsed && typeof parsed === 'object') {
+                            if (typeof parsed.currentDay === 'number') currentDay = parsed.currentDay;
+                            if (typeof parsed.acceptance === 'number') acceptance = parsed.acceptance;
+                            if (Array.isArray(parsed.collectedPoemFragments)) playerCognition.collectedPoemFragments = new Set(parsed.collectedPoemFragments);
+                            if (Array.isArray(parsed.lockedClues)) lockedClues = new Set(parsed.lockedClues);
+                            if (typeof parsed.totalCoughCount === 'number') totalCoughCount = parsed.totalCoughCount;
+                        }
+                        // 更新碎片計數 UI（若存在）
+                        try {
+                            const counter = document.getElementById('fragment-counter');
+                            if (counter && playerCognition.collectedPoemFragments) {
+                                counter.innerText = `〈記憶碎片：${playerCognition.collectedPoemFragments.size}/26〉`;
+                            }
+                        } catch (e) { console.warn('Failed to update fragment-counter UI', e); }
+                    } catch (e) { console.warn('loadGameState failed', e); }
+                }
 
         function applyUIScale() {
             const styleEl = document.getElementById('ui-scaling');
@@ -3075,6 +3487,9 @@
                 img.style.display = 'none';
                 finalImageElement.innerHTML = '<div style="color:rgba(255,255,255,0.3);font-size:1.5rem;letter-spacing:4px;">就像一朵美麗的朱槿花。</div>';
             };
+
+            // add subtle pulse/glow animation to final ending image
+            img.classList.add('final-pulse');
 
             finalImageElement.appendChild(img);
             document.body.appendChild(finalImageElement);
@@ -3307,145 +3722,260 @@
 
             // 記憶長廊系統（完整實作）
             const GallerySystem = (function() {
-                const PAINTINGS = [
-                    { count: 1,  title: '孤獨的起點', yOffset: 130 },
-                    { count: 4,  title: '被注視的痕跡', yOffset: -70 },
-                    { count: 8,  title: '等待的證明', yOffset: 90 },
-                    { count: 12, title: '鏡中的反向凝視', yOffset: -110 },
-                    { count: 16, title: '無聲的呼喚', yOffset: 70 },
-                    { count: 20, title: '覺醒的淚', yOffset: -150 },
-                    { count: 26, title: '最後的朱槿花', yOffset: -20 }
-                ];
-                const hoverTexts = [
-                        "十月十四日。你親手圈起，卻假裝忘記的日期。",
-                        "茶杯還暖，但對面的椅子空了。",
-                        "足印在門前猶豫不決，傘忘了帶走。",
-                        "床底下的積水倒映著你的臉。",
-                        "牆上的字跡顫抖，署名是安。",
-                        "紅色不是血，是你終於願意流出的淚。",
-                        "門開了。地上只剩一條圍巾，和一朵朱槿花。"
-                ];
-                const TOTAL_FRAGMENTS = 26;
-                const DOT_SPACING = 140;
-                const GALLERY_BASE_PATH = 'images/gallery/';
-                let overlayElement = null;
-                let fullscreenElement = null;
+    const PAINTINGS = [
+        { count: 1,  title: '孤獨的起點', yOffset: 130 },
+        { count: 4,  title: '被注視的痕跡', yOffset: -70 },
+        { count: 8,  title: '等待的證明', yOffset: 90 },
+        { count: 12, title: '鏡中的反向凝視', yOffset: -110 },
+        { count: 16, title: '無聲的呼喚', yOffset: 70 },
+        { count: 20, title: '覺醒的淚', yOffset: -150 },
+        { count: 26, title: '最後的朱槿花', yOffset: -20 }
+    ];
+    const hoverTexts = [
+        "十月十四日。你親手圈起，卻假裝忘記的日期。",
+        "茶杯還暖，但對面的椅子空了。",
+        "足印在門前猶豫不決，傘忘了帶走。",
+        "床底下的積水倒映著你的臉。",
+        "牆上的字跡顫抖，署名是安。",
+        "紅色不是血，是你終於願意流出的淚。",
+        "門開了。地上只剩一條圍巾，和一朵朱槿花。"
+    ];
+    const TOTAL_FRAGMENTS = 26;
+    const DOT_SPACING = 140;
+    const GALLERY_BASE_PATH = 'images/gallery/';
 
-                // Gallery uses native scrolling (CSS) now; custom drag removed to avoid pointer capture conflicts.
+    let overlayElement = null;
+    let fullscreenElement = null;
+    let closeTimers = [];   // 儲存所有關閉動畫的計時器
+    let cardShowTimers = [];// 儲存打開時顯示卡片的計時器
+    let galleryDragInitialized = false;
+    // drag handler refs so we can remove them on close
+    let galleryMouseDownHandler = null;
+    let galleryMouseMoveHandler = null;
+    let galleryMouseUpHandler = null;
+    let galleryTouchStartHandler = null;
+    let galleryTouchMoveHandler = null;
+    let galleryTouchEndHandler = null;
 
-                function initDOM() {
-                    if (document.getElementById('gallery-overlay')) return;
-                    overlayElement = document.createElement('div');
-                    overlayElement.id = 'gallery-overlay';
-                    fullscreenElement = document.createElement('div');
-                    fullscreenElement.id = 'gallery-fullscreen';
-                    const fullImg = document.createElement('img');
-                    fullImg.id = 'gallery-fullscreen-img'; fullImg.src = '';
-                    fullscreenElement.appendChild(fullImg);
-                    fullscreenElement.addEventListener('click', () => fullscreenElement.classList.remove('active'));
-                    document.body.appendChild(overlayElement);
-                    document.body.appendChild(fullscreenElement);
+    function clearAllTimers() {
+        closeTimers.forEach(t => clearTimeout(t));
+        cardShowTimers.forEach(t => clearTimeout(t));
+        closeTimers = [];
+        cardShowTimers = [];
+    }
+
+    function initDOM() {
+        if (document.getElementById('gallery-overlay')) return;
+        overlayElement = document.createElement('div');
+        overlayElement.id = 'gallery-overlay';
+        fullscreenElement = document.createElement('div');
+        fullscreenElement.id = 'gallery-fullscreen';
+        const fullImg = document.createElement('img');
+        fullImg.id = 'gallery-fullscreen-img';
+        fullImg.src = '';
+        fullscreenElement.appendChild(fullImg);
+        // 只綁定一次全螢幕點擊關閉
+        fullscreenElement.addEventListener('click', () => {
+            fullscreenElement.classList.remove('active');
+            fullImg.src = '';   // 清除 src，釋放記憶體
+            fullImg.classList.remove('final-pulse');
+        });
+        document.body.appendChild(overlayElement);
+        document.body.appendChild(fullscreenElement);
+    }
+
+    function attachGalleryDrag() {
+        if (galleryDragInitialized || !overlayElement) return;
+        galleryDragInitialized = true;
+        const scrollArea = overlayElement.querySelector('#gallery-scroll-area');
+        if (!scrollArea) return;
+        let isDown = false, startX = 0, scrollLeft = 0;
+        let touchStartX = 0, touchScrollLeft = 0;
+
+        galleryMouseDownHandler = function(e) {
+            isDown = true;
+            scrollArea.classList.add('dragging');
+            startX = e.pageX - scrollArea.offsetLeft;
+            scrollLeft = scrollArea.scrollLeft;
+            e.preventDefault();
+        };
+
+        galleryMouseMoveHandler = function(e) {
+            if (!isDown) return;
+            const x = e.pageX - scrollArea.offsetLeft;
+            const walk = (x - startX);
+            scrollArea.scrollLeft = scrollLeft - walk;
+        };
+
+        galleryMouseUpHandler = function() {
+            isDown = false;
+            if (scrollArea) scrollArea.classList.remove('dragging');
+        };
+
+        galleryTouchStartHandler = function(e) {
+            if (!e.touches || !e.touches[0]) return;
+            touchStartX = e.touches[0].pageX;
+            touchScrollLeft = scrollArea.scrollLeft;
+        };
+
+        galleryTouchMoveHandler = function(e) {
+            if (!e.touches || !e.touches[0]) return;
+            const dx = e.touches[0].pageX - touchStartX;
+            scrollArea.scrollLeft = touchScrollLeft - dx;
+        };
+
+        galleryTouchEndHandler = function() {
+            isDown = false;
+            if (scrollArea) scrollArea.classList.remove('dragging');
+        };
+
+        scrollArea.addEventListener('mousedown', galleryMouseDownHandler);
+        window.addEventListener('mouseup', galleryMouseUpHandler);
+        scrollArea.addEventListener('mousemove', galleryMouseMoveHandler);
+        scrollArea.addEventListener('touchstart', galleryTouchStartHandler, { passive: true });
+        scrollArea.addEventListener('touchmove', galleryTouchMoveHandler, { passive: true });
+        scrollArea.addEventListener('touchend', galleryTouchEndHandler, { passive: true });
+        scrollArea.addEventListener('touchcancel', galleryTouchEndHandler, { passive: true });
+    }
+
+    function render() {
+        const currentCount = playerCognition?.collectedPoemFragments?.size || 0;
+        const totalLineWidth = (TOTAL_FRAGMENTS - 1) * DOT_SPACING;
+        const halfLine = Math.round(totalLineWidth / 2);
+        let html = `
+            <button class="gallery-close-btn" onclick="GallerySystem.close()">離開</button>
+            <div id="gallery-scroll-area">
+                <div class="corridor-bridge" style="width: calc(100vw + ${totalLineWidth + 400}px);">
+                    <div class="progress-line" style="width: ${totalLineWidth}px; left: calc(50vw - ${halfLine}px);">
+        `;
+        for (let i = 1; i <= TOTAL_FRAGMENTS; i++) {
+            const isSpecial = PAINTINGS.some(p => p.count === i);
+            const isLit = currentCount >= i;
+            const dotClass = `dot ${isSpecial ? 'special' : ''} ${isLit ? 'lit' : ''}`;
+            html += `<div class="${dotClass}" style="left: ${(i - 1) * DOT_SPACING}px;"></div>`;
+        }
+        html += `</div>`;
+        PAINTINGS.forEach((item, index) => {
+            const isUnlocked = currentCount >= item.count;
+            const isFinal = index === 6;
+            const cardClass = `gallery-card ${isUnlocked ? 'unlocked' : 'locked'} ${isFinal ? 'final-card' : ''}`;
+            const xPos = (item.count - 1) * DOT_SPACING;
+            const topPos = `calc(45% + ${item.yOffset}px)`;
+            const leftPos = `calc(50vw - ${halfLine}px + ${xPos}px)`;
+            const imgSrc = `${GALLERY_BASE_PATH}gallery_${String(index+1).padStart(2,'0')}.png`;
+            const caption = hoverTexts[index] || item.title;
+            const titleAttr = isUnlocked ? `title="${caption.replace(/"/g, '&quot;')}"` : '';
+            html += `
+                <div class="${cardClass}" style="left: ${leftPos}; top: ${topPos};" id="card-${index}" data-title="${item.title.replace(/"/g, '&quot;')}" ${titleAttr} ${isUnlocked ? `onclick="GallerySystem.viewImage('${imgSrc}', ${index})"` : ''}>
+                    ${isUnlocked 
+                        ? `<img data-src="${imgSrc}" class="gallery-img" id="img-${index}" src=""><div class="hover-caption">${caption}</div>` 
+                        : `<div class="locked-q">？</div>`
+                    }
+                </div>
+            `;
+        });
+        html += `</div></div>`;
+        overlayElement.innerHTML = html;
+
+        // 直接載入所有圖片（不再依賴 lazy loading）並綁定錯誤處理
+        const imgs = overlayElement.querySelectorAll('img.gallery-img[data-src]');
+        imgs.forEach(img => {
+            if (img.dataset.src) { img.src = img.dataset.src; img.removeAttribute('data-src'); }
+            img.addEventListener('error', function() {
+                try {
+                    const parent = img.parentElement;
+                    const title = parent && parent.dataset && parent.dataset.title ? parent.dataset.title : '圖片載入失敗';
+                    if (parent) parent.innerHTML = `<div style="color:#fff;text-align:center;padding:20px;font-size:1.2rem;">${title}</div>`;
+                } catch (e) { try { console.warn('gallery image error handler failed', e); } catch(_){} }
+            });
+        });
+
+        // attach draggable scrolling once
+        attachGalleryDrag();
+    }
+
+    function setupGalleryLazyLoading() {
+        // left for backward compatibility but behaviour is now immediate loading in render()
+        return;
+    }
+
+    return {
+        open: function() {
+            releasePointerLockForUI();
+            clearAllTimers();  // 清除之前的任何殘留計時器
+            initDOM();
+            render();
+            overlayElement.classList.add('active');
+            const scrollArea = document.getElementById('gallery-scroll-area');
+            if (scrollArea) scrollArea.scrollLeft = 0;
+
+            // 依序顯示卡片，計時器存入 cardShowTimers 以便清除
+            PAINTINGS.forEach((_, i) => {
+                const timer = setTimeout(() => {
+                    const card = document.getElementById(`card-${i}`);
+                    if (card) card.classList.add('show');
+                }, i * 400);
+                cardShowTimers.push(timer);
+            });
+
+            // brief caption flash for unlocked cards
+            const flashTimer = setTimeout(() => {
+                const unlocked = overlayElement.querySelectorAll('.gallery-card.unlocked');
+                unlocked.forEach((card, idx) => {
+                    const cap = card.querySelector('.hover-caption');
+                    if (cap) {
+                        const t = setTimeout(() => { cap.classList.add('flash'); setTimeout(() => cap.classList.remove('flash'), 2400); }, idx * 180);
+                        closeTimers.push(t);
+                    }
+                });
+            }, 500);
+            closeTimers.push(flashTimer);
+        },
+        close: function() {
+            if (!overlayElement) return;
+            clearAllTimers();  // 清除所有進行中的顯示/隱藏動畫
+            // 立即重置所有卡片狀態，避免殘留
+            PAINTINGS.forEach((_, i) => {
+                const card = document.getElementById(`card-${i}`);
+                if (card) card.classList.remove('show');
+            });
+            overlayElement.classList.remove('active');
+
+            // 移除畫廊拖曳事件監聽以避免記憶體或多重綁定
+            try {
+                const scrollArea = overlayElement.querySelector('#gallery-scroll-area');
+                if (scrollArea) {
+                    if (galleryMouseDownHandler) { scrollArea.removeEventListener('mousedown', galleryMouseDownHandler); galleryMouseDownHandler = null; }
+                    if (galleryMouseMoveHandler) { scrollArea.removeEventListener('mousemove', galleryMouseMoveHandler); galleryMouseMoveHandler = null; }
+                    if (galleryTouchStartHandler) { scrollArea.removeEventListener('touchstart', galleryTouchStartHandler); galleryTouchStartHandler = null; }
+                    if (galleryTouchMoveHandler) { scrollArea.removeEventListener('touchmove', galleryTouchMoveHandler); galleryTouchMoveHandler = null; }
+                    if (galleryTouchEndHandler) { scrollArea.removeEventListener('touchend', galleryTouchEndHandler); scrollArea.removeEventListener('touchcancel', galleryTouchEndHandler); galleryTouchEndHandler = null; }
                 }
+                if (galleryMouseUpHandler) { window.removeEventListener('mouseup', galleryMouseUpHandler); galleryMouseUpHandler = null; }
+            } catch (e) { /* ignore */ }
+            galleryDragInitialized = false;
 
-                function render() {
-                    const currentCount = playerCognition?.collectedPoemFragments?.size || 0;
-                    const totalLineWidth = (TOTAL_FRAGMENTS - 1) * DOT_SPACING;
-                    let html = `
-                        <button class="gallery-close-btn" onclick="GallerySystem.close()">離開</button>
-                        <div id="gallery-scroll-area">
-                            <div class="corridor-bridge" style="width: calc(100vw + ${totalLineWidth + 400}px);">
-                                <div class="progress-line" style="width: ${totalLineWidth}px;">
-                    `;
-                    for(let i = 1; i <= TOTAL_FRAGMENTS; i++) {
-                        const isSpecial = PAINTINGS.some(p => p.count === i);
-                        const isLit = currentCount >= i;
-                        const dotClass = `dot ${isSpecial ? 'special' : ''} ${isLit ? 'lit' : ''}`;
-                        const xPos = (i - 1) * DOT_SPACING;
-                        html += `<div class="${dotClass}" style="left: ${xPos}px;"></div>`;
-                    }
-                    html += `</div>`;
-                    PAINTINGS.forEach((item, index) => {
-                        const isUnlocked = currentCount >= item.count;
-                        const isFinal = index === 6;
-                        const cardClass = `gallery-card ${isUnlocked ? 'unlocked' : 'locked'} ${isFinal ? 'final-card' : ''}`;
-                        const xPos = (item.count - 1) * DOT_SPACING;
-                        const topPos = `calc(45% + ${item.yOffset}px)`;
-                        const leftPos = `calc(50vw + ${xPos}px)`;
-                        const imgSrc = `${GALLERY_BASE_PATH}gallery_${String(index+1).padStart(2,'0')}.png`;
-                        const caption = hoverTexts[index] || item.title;
-                        const titleAttr = isUnlocked ? `title="${caption.replace(/"/g, '&quot;')}"` : '';
-                        html += `
-                            <div class="${cardClass}" style="left: ${leftPos}; top: ${topPos};" id="card-${index}" ${titleAttr} ${isUnlocked ? `onclick="GallerySystem.viewImage('${imgSrc}', ${index})"` : ''}>
-                                ${isUnlocked 
-                                            ? `<img data-src="${imgSrc}" class="gallery-img" id="img-${index}" src="" onerror="this.parentElement.innerHTML='<div style=\"color:#fff;text-align:center;padding:20px;font-size:1.2rem;\">${item.title}</div>'"><div class="hover-caption">${caption}</div>` 
-                                            : `<div class="locked-q">？</div>`
-                                        }
-                            </div>
-                        `;
-                    });
-                    html += `</div></div>`;
-                    overlayElement.innerHTML = html;
-                    // Setup lazy loading for images inside the gallery overlay
-                    setupGalleryLazyLoading();
+            // 關閉全螢幕（如果有打開的話）
+            if (fullscreenElement && fullscreenElement.classList.contains('active')) {
+                fullscreenElement.classList.remove('active');
+                const img = document.getElementById('gallery-fullscreen-img');
+                if (img) {
+                    img.src = '';
+                    img.classList.remove('final-pulse');
                 }
-
-                    function setupGalleryLazyLoading() {
-                        if (!overlayElement) return;
-                        const scrollArea = overlayElement.querySelector('#gallery-scroll-area');
-                        const imgs = overlayElement.querySelectorAll('img.gallery-img[data-src]');
-                        if (!imgs || imgs.length === 0) return;
-                        if (!('IntersectionObserver' in window)) {
-                            imgs.forEach(img => { if (img.dataset.src) { img.src = img.dataset.src; img.removeAttribute('data-src'); } });
-                            return;
-                        }
-                        const obsRoot = scrollArea || null;
-                        const observer = new IntersectionObserver((entries) => {
-                            entries.forEach(entry => {
-                                if (entry.isIntersecting) {
-                                    const img = entry.target;
-                                    if (img.dataset.src) { img.src = img.dataset.src; img.removeAttribute('data-src'); }
-                                    observer.unobserve(img);
-                                }
-                            });
-                        }, { root: obsRoot, rootMargin: '200px' });
-                        imgs.forEach(img => observer.observe(img));
-                    }
-
-                return {
-                    open: function() {
-                        releasePointerLockForUI();
-                        initDOM(); render(); overlayElement.classList.add('active');
-                        const scrollArea = document.getElementById('gallery-scroll-area');
-                        if (scrollArea) scrollArea.scrollLeft = 0;
-                        setTimeout(() => {
-                            PAINTINGS.forEach((_, i) => {
-                                const card = document.getElementById(`card-${i}`);
-                                if(card) { setTimeout(() => card.classList.add('show'), i * 800); }
-                            });
-                        }, 1000);
-                    },
-                    close: function() {
-                        if (!overlayElement) return;
-                        PAINTINGS.forEach((_, i) => {
-                            const card = document.getElementById(`card-${i}`);
-                            if(card) {
-                                let delay = (5 - i) * 300;
-                                if (i === 6) delay = (6 * 300) + 2000;
-                                setTimeout(() => card.classList.remove('show'), delay);
-                            }
-                        });
-                        setTimeout(() => { overlayElement.classList.remove('active'); }, (6 * 300) + 2000 + 1000);
-                    },
-                    viewImage: function(src, index) {
-                        const fullscreenImg = document.getElementById('gallery-fullscreen-img');
-                        if (fullscreenImg) {
-                            fullscreenImg.src = src;
-                            fullscreenImg.style.boxShadow = index === 6 ? '0 0 80px rgba(255,0,0,0.4)' : '0 0 40px rgba(0,0,0,0.8)';
-                            fullscreenElement.classList.add('active');
-                        }
-                    }
-                };
-            })();
+            }
+        },
+        viewImage: function(src, index) {
+            const fullscreenImg = document.getElementById('gallery-fullscreen-img');
+            if (fullscreenImg) {
+                fullscreenImg.src = src;
+                fullscreenImg.style.boxShadow = index === 6 ? '0 0 120px rgba(255,0,0,0.45)' : '0 0 40px rgba(0,0,0,0.8)';
+                if (index === 6) fullscreenImg.classList.add('final-pulse'); else fullscreenImg.classList.remove('final-pulse');
+                fullscreenElement.classList.add('active');
+            }
+        }
+    };
+})();
 
             function showMemoryGallery() { GallerySystem.open(); }
 
@@ -3489,21 +4019,27 @@
         }
 
         function updateFlowerVisual() {
-            const flower = document.getElementById('flower-symbol');
-            if (!flower) return;
-            const scale = 0.6 + (typeof acceptance !== 'undefined' ? (acceptance / 100) * 1.4 : 0.6);
-            const opacity = 0.3 + (typeof acceptance !== 'undefined' ? (acceptance / 100) * 0.7 : 0.3);
-            flower.style.transform = `scale(${scale})`;
-            flower.style.opacity = opacity;
-            const petals = flower.querySelectorAll('svg path');
-            petals.forEach((p, i) => {
-                const open = (typeof acceptance !== 'undefined') ? (acceptance / 100) : 0.5;
-                const rot = (i - 2) * (10 + open * 10);
-                const s = 0.6 + open * 1.4;
-                p.setAttribute('transform', `rotate(${rot} 50 50) scale(${s})`);
-                p.setAttribute('fill', (acceptance > 50) ? '#ff4444' : '#660000');
-                p.style.opacity = Math.max(0.25, 0.5 + (acceptance - 50) / 200);
-            });
+            try {
+                const flower = document.getElementById('flower-symbol');
+                if (!flower) return;
+                const scale = 0.6 + (typeof acceptance !== 'undefined' ? (acceptance / 100) * 1.4 : 0.6);
+                const opacity = 0.3 + (typeof acceptance !== 'undefined' ? (acceptance / 100) * 0.7 : 0.3);
+                try { flower.style.transform = `scale(${scale})`; } catch(e){ console.warn('updateFlowerVisual: set transform failed', e); }
+                try { flower.style.opacity = opacity; } catch(e){ }
+                const petals = flower.querySelectorAll && flower.querySelectorAll('svg path');
+                if (petals && petals.forEach) {
+                    petals.forEach((p, i) => {
+                        try {
+                            const open = (typeof acceptance !== 'undefined') ? (acceptance / 100) : 0.5;
+                            const rot = (i - 2) * (10 + open * 10);
+                            const s = 0.6 + open * 1.4;
+                            if (p && p.setAttribute) p.setAttribute('transform', `rotate(${rot} 50 50) scale(${s})`);
+                            if (p && p.setAttribute) p.setAttribute('fill', (acceptance > 50) ? '#ff4444' : '#660000');
+                            if (p && p.style) p.style.opacity = Math.max(0.25, 0.5 + (acceptance - 50) / 200);
+                        } catch (ePet) { console.warn('updateFlowerVisual: petal update failed', ePet); }
+                    });
+                }
+            } catch (e) { console.warn('updateFlowerVisual failed', e); }
         }
 
         function animateGame() {
@@ -3564,7 +4100,7 @@
                 const target = new THREE.Vector3(Math.sin(phi)*Math.cos(theta), Math.cos(phi), Math.sin(phi)*Math.sin(theta));
                 resolvePlayerColliderOverlap();
                 camera.lookAt(target.add(camera.position)); updateCorridorVisibility();
-                try { updateFlowerVisual(); } catch(e) {}
+                try { updateFlowerVisual(); } catch(e) { console.warn('updateFlowerVisual failed (render loop)', e); }
                 renderer.render(scene, camera); return;
             }
             // 若 dreamPhase 正在進行，減少輸入與顯示（簡單實作）
@@ -3704,7 +4240,7 @@
                 updateVignetteForAcceptance();
                 updateAcceptanceTextMotion(deltaTime);
                 if (devPanel) updateDevPanel();
-                try { updateFlowerVisual(); } catch(e) {}
+                try { updateFlowerVisual(); } catch(e) { console.warn('updateFlowerVisual failed (update loop)', e); }
                 renderer.render(scene, camera);
             }
         }
