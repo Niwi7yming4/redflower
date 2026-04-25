@@ -920,11 +920,18 @@
 
             if (acceptance > 70) {
                 mirrorFig.visible = true;
-                if (mirrorFig.material && mirrorFig.material.color) mirrorFig.material.color.setHex(0xffffff);
+                if (mirrorFig.material && mirrorFig.material.color) {
+                    mirrorFig.material.color.setHex(0xffffff);
+                    mirrorFig.material.opacity = 1.0;
+                    mirrorFig.material.needsUpdate = true;
+                }
             } else if (acceptance < 40) {
                 mirrorFig.visible = true;
-                if (mirrorFig.material && mirrorFig.material.color) mirrorFig.material.color.setHex(0x884444);
-                mirrorFig.rotation.y = Math.PI;
+                if (mirrorFig.material && mirrorFig.material.color) {
+                    mirrorFig.material.color.setHex(0x884444);
+                    mirrorFig.material.opacity = 0.6;
+                    mirrorFig.material.needsUpdate = true;
+                }
             } else {
                 mirrorFig.visible = currentDay >= 4;
             }
@@ -1646,19 +1653,12 @@
                     if (collected.has(id)) data.missedPerFragment[id] = 0;
                 }
 
-                // Choose up to 6 missing fragments per run (cycled)
+                // Increment miss count for all missing fragments this run
                 const missing = allFragmentIds.filter(id => !collected.has(id));
                 if (missing.length > 0) {
-                    data.nextBatchStart = data.nextBatchStart || 0;
-                    const batchSize = 6;
-                    const batchCount = Math.min(batchSize, missing.length);
-                    const batch = [];
-                    for (let i = 0; i < batchCount; i++) {
-                        const idx = (data.nextBatchStart + i) % missing.length;
-                        batch.push(missing[idx]);
+                    for (const id of missing) {
+                        data.missedPerFragment[id] = (data.missedPerFragment[id] || 0) + 1;
                     }
-                    batch.forEach(id => { data.missedPerFragment[id] = (data.missedPerFragment[id] || 0) + 1; });
-                    data.nextBatchStart = (data.nextBatchStart + batchCount) % missing.length;
                 }
 
                 saveMemoryRecallData(data);
@@ -2286,11 +2286,13 @@
                 const fallbackTexture = new THREE.CanvasTexture(canvas);
                 fallbackTexture.minFilter = THREE.LinearFilter;
                 fallbackTexture.magFilter = THREE.LinearFilter;
-                mirrorPlane.material.map = fallbackTexture;
-                mirrorPlane.material.opacity = 0.16;
-                mirrorPlane.material.depthWrite = false;
-                mirrorPlane.material.needsUpdate = true;
-                mirrorPlaneMat = mirrorPlane.material;
+                    mirrorPlane.material.map = fallbackTexture;
+                    mirrorPlane.material.opacity = 0.16;
+                    mirrorPlane.material.depthWrite = false;
+                    mirrorPlane.material.needsUpdate = true;
+                    mirrorPlaneMat = mirrorPlane.material;
+                    // Ensure fallback also uses horizontal plane mirroring
+                    try { if (mirrorPlane && mirrorPlane.scale) mirrorPlane.scale.x = -1; } catch(e) { console.warn('Failed to set mirrorPlane.scale.x on fallback', e); }
             };
 
             if (window.location.protocol === 'file:') {
@@ -2304,27 +2306,18 @@
                         try {
                             texture.minFilter = THREE.LinearFilter;
                             texture.magFilter = THREE.LinearFilter;
-                            // Ensure consistent orientation for mirror textures: avoid vertical inversion
-                            try { texture.flipY = false; } catch(e) {}
-                            try { if (texture.repeat && typeof texture.repeat.set === 'function') texture.repeat.set(-1, 1); } catch(e) {}
-                            try { if (!texture.center) texture.center = new THREE.Vector2(0.5, 0.5); else texture.center.set(0.5, 0.5); } catch(e) {}
-                            try { texture.needsUpdate = true; } catch(e) {}
+                            // Do not set repeat/center on the texture; mirror by scaling the plane
                             mirrorTextures[key] = texture;
                             // 當兩張都載入完畢，先顯示 normal
                             if (mirrorTextures.normal && mirrorTextures.cry) {
-                                const m = mirrorTextures.normal;
-                                try { m.flipY = false; } catch(e) {}
-                                try { if (m.repeat && typeof m.repeat.set === 'function') m.repeat.set(-1, 1); } catch(e) {}
-                                try { if (!m.center) m.center = new THREE.Vector2(0.5, 0.5); else m.center.set(0.5, 0.5); } catch(e) {}
-                                try { m.needsUpdate = true; } catch(e) {}
-                                mirrorPlane.material.map = m;
+                                mirrorPlane.material.map = mirrorTextures.normal;
                                 mirrorPlane.material.opacity = 0.16;
                                 mirrorPlane.material.depthWrite = false;
                                 mirrorPlane.material.needsUpdate = true;
                                 mirrorPlane.material.color = new THREE.Color(0x888888);
                                 mirrorPlaneMat = mirrorPlane.material;
-                                // ensure plane scale is default
-                                if (mirrorPlane && mirrorPlane.scale && mirrorPlane.scale.x !== 1) mirrorPlane.scale.x = 1;
+                                // 水平鏡射平面，產生鏡子左右鏡射效果
+                                try { if (mirrorPlane && mirrorPlane.scale) mirrorPlane.scale.x = -1; } catch(e) { console.warn('Failed to set mirrorPlane.scale.x', e); }
                             }
                         } catch (e) { console.warn('mirror texture load processing failed', e); }
                     }, undefined, () => {
@@ -2419,6 +2412,82 @@
         }
 
         let typeReadInt;
+
+        function processEmotionalClue(target, dt, infText) {
+            try {
+                const clue = (typeof emotionalClues !== 'undefined') ? emotionalClues[target] : null;
+                if (!clue || currentDay < clue.day) return;
+
+                if (lockedClues && lockedClues.has && lockedClues.has(target)) {
+                    if (infText) { infText.innerText = "妳拒絕了這個線索。"; infText.style.opacity = '1'; infText.style.color = '#aa4444'; }
+                    return;
+                }
+
+                // 矛盾觸發
+                if (currentDay >= 3 && acceptance >= 40 && acceptance <= 60 && !clue.isContradicting && Math.random() < contradictionProbability) {
+                    clue.isContradicting = true; clue.contradictTimer = 3.0; contradictionLevel++;
+                }
+
+                if (clue.isContradicting) {
+                    clue.contradictTimer -= dt;
+                    const a = Math.floor((clue.contradictTimer * 3) % 2);
+                    const alt = (clue.fragments && clue.fragments[(clue.currentFragment) % clue.fragments.length]) ? clue.fragments[(clue.currentFragment) % clue.fragments.length].text : '';
+                    const alt2 = (clue.fragments && clue.fragments[Math.max(0, clue.currentFragment-1) % clue.fragments.length]) ? clue.fragments[Math.max(0, clue.currentFragment-1) % clue.fragments.length].text : alt;
+                    if (infText) { infText.innerText = a === 0 ? alt : alt2; infText.style.opacity = '1'; infText.style.color = '#ff4444'; }
+                    if (clue.contradictTimer <= 0) { clue.isContradicting = false; }
+                } else {
+                    // 根據是否激活誤解，選擇不同的 fragments 陣列
+                    let activeFragments = clue.isActive ? (clue.delusionFragments || clue.fragments) : clue.fragments;
+                    let activeIndex = clue.isActive ? (clue.delusionIndex || 0) : clue.currentFragment;
+
+                    clue.inspectProgress = (clue.inspectProgress || 0) + dt;
+                    if (clue.inspectProgress >= clue.THRESH && activeIndex < (activeFragments ? activeFragments.length : 0)) {
+                        clue.inspectProgress = 0;
+                        const frag = activeFragments[activeIndex];
+                        if (infText) infText.innerText = frag.text;
+
+                        if (frag.tag === 'care') acceptance = Math.min(100, acceptance + 1);
+                        else if (frag.tag === 'distance' || frag.tag === 'neglect') acceptance = Math.max(0, acceptance - 1);
+
+                        if (clue.isActive) {
+                            clue.delusionIndex = (clue.delusionIndex || 0) + 1;
+                            if (clue.delusionIndex >= (clue.delusionFragments ? clue.delusionFragments.length : 0) && clue.target === 'mirror') unlockPoemFragment('P15');
+                        } else {
+                            clue.currentFragment = (clue.currentFragment || 0) + 1;
+                            if (clue.currentFragment >= (clue.fragments ? clue.fragments.length : 0) && clue.target === 'vase') unlockPoemFragment('P01');
+                            if (clue.currentFragment >= (clue.fragments ? clue.fragments.length : 0) && clue.target === 'calendar') unlockPoemFragment('P07');
+                        }
+                    } else {
+                        if (activeIndex > 0 && activeFragments && activeFragments.length) {
+                            if (infText) infText.innerText = activeFragments[Math.max(0, activeIndex - 1)].text;
+                        } else {
+                            if (infText) infText.innerText = "？";
+                        }
+                    }
+
+                    if (activeIndex >= (activeFragments ? activeFragments.length : 0) && (clue.inspectProgress || 0) > 5.0) {
+                        acceptance = Math.min(100, acceptance + 0.5 * dt);
+                        if (!clue._gaveGazeFeedback) {
+                            clue._gaveGazeFeedback = true;
+                            const lastText = (activeFragments && activeFragments.length) ? activeFragments[activeFragments.length-1].text : '';
+                            if (infText) {
+                                infText.innerText = lastText || infText.innerText;
+                                const r = 255;
+                                const g = Math.round(100 + (acceptance / 100) * 155);
+                                const b = Math.round(100 + (acceptance / 100) * 155);
+                                infText.style.color = clue.isActive ? '#ff6666' : '#ffdedd';
+                                infText.style.textShadow = `0 0 12px rgba(${r},${g},${b},0.6)`;
+                            }
+                            if (typeof AudioEngine !== 'undefined' && AudioEngine.playBreath) AudioEngine.playBreath();
+                            setTimeout(() => { clue._gaveGazeFeedback = false; if (infText) infText.style.textShadow = ''; }, 3000);
+                        }
+                    }
+
+                    if (infText) { infText.style.opacity = '1'; infText.style.color = clue.isActive ? '#ff4444' : 'rgba(200, 50, 50, 0.9)'; }
+                }
+            } catch (e) { console.warn('processEmotionalClue failed', e); }
+        }
+
         function checkInteractions(dt) {
                     if (gameState !== 'AWAKE') return;
                     // 記錄上一個 frame 的 gaze（用於黏滯判定）
@@ -2481,6 +2550,8 @@
                         }
                     } catch (e) { console.warn('Window gaze P04 check failed', e); }
                     if (gazeTimer > 3.0 && windowGazeCount < currentDay) { windowGazeCount++; gazeTimer = -5; unlockPoemFragment('P20'); }
+                    // 交由情感線索通用處理（保留上面特殊解鎖）
+                    try { processEmotionalClue('window', dt, infText); } catch (e) { console.warn('processEmotionalClue (window) failed', e); }
                 }
                 else if (target === 'door') {
                     gazeTimer += dt;
@@ -2522,77 +2593,7 @@
                         }
                     }
 
-                    let clue = emotionalClues[target];
-                    if (clue && currentDay >= clue.day) {
-                        // 如果此線索被鎖死，顯示被拒絕訊息
-                        if (lockedClues.has(target)) {
-                            infText.innerText = "妳拒絕了這個線索。";
-                            infText.style.opacity = '1'; infText.style.color = '#aa4444';
-                        } else {
-                            // 矛盾觸發：在第三天後，接受度中間區間有機率造成矛盾
-                            if (currentDay >= 3 && acceptance >= 40 && acceptance <= 60 && !clue.isContradicting && Math.random() < contradictionProbability) {
-                                clue.isContradicting = true; clue.contradictTimer = 3.0; contradictionLevel++;
-                            }
-
-                            // 處理檢視進度
-                            if (clue.isContradicting) {
-                                // 在矛盾狀態下閃爍顯示片段，且不推進進度
-                                clue.contradictTimer -= dt;
-                                const a = Math.floor((clue.contradictTimer * 3) % 2);
-                                const alt = clue.fragments[(clue.currentFragment) % clue.fragments.length].text;
-                                const alt2 = clue.fragments[Math.max(0, clue.currentFragment-1) % clue.fragments.length].text || alt;
-                                infText.innerText = a === 0 ? alt : alt2;
-                                infText.style.opacity = '1'; infText.style.color = '#ff4444';
-                                if (clue.contradictTimer <= 0) { clue.isContradicting = false; }
-                            } else {
-                                // 根據是否激活誤解，選擇不同的 fragments 陣列
-                                let activeFragments = clue.isActive ? (clue.delusionFragments || clue.fragments) : clue.fragments;
-                                let activeIndex = clue.isActive ? (clue.delusionIndex || 0) : clue.currentFragment;
-                                
-                                clue.inspectProgress += dt;
-                                if (clue.inspectProgress >= clue.THRESH && activeIndex < activeFragments.length) {
-                                    clue.inspectProgress = 0;
-                                    const frag = activeFragments[activeIndex];
-                                    infText.innerText = frag.text;
-                                    
-                                    if (frag.tag === 'care') acceptance = Math.min(100, acceptance + 1);
-                                    else if (frag.tag === 'distance' || frag.tag === 'neglect') acceptance = Math.max(0, acceptance - 1);
-                                    
-                                    if (clue.isActive) {
-                                        clue.delusionIndex = (clue.delusionIndex || 0) + 1;
-                                        if (clue.delusionIndex >= activeFragments.length && clue.target === 'mirror') unlockPoemFragment('P15');
-                                    } else {
-                                        clue.currentFragment++;
-                                        if (clue.currentFragment >= clue.fragments.length && clue.target === 'vase') unlockPoemFragment('P01');
-                                        if (clue.currentFragment >= clue.fragments.length && clue.target === 'calendar') unlockPoemFragment('P07');
-                                    }
-                                } else {
-                                    if (activeIndex > 0) infText.innerText = activeFragments[activeIndex - 1].text;
-                                    else infText.innerText = "？";
-                                }
-                                
-                                if (activeIndex >= activeFragments.length && clue.inspectProgress > 5.0) {
-                                    acceptance = Math.min(100, acceptance + 0.5 * dt);
-                                    if (!clue._gaveGazeFeedback) {
-                                        clue._gaveGazeFeedback = true;
-                                        // 顯示最後一段作為微弱回饋，並短暫發光
-                                        const lastText = (activeFragments && activeFragments.length) ? activeFragments[activeFragments.length-1].text : '';
-                                        infText.innerText = lastText || infText.innerText;
-                                        const r = 255;
-                                        const g = Math.round(100 + (acceptance / 100) * 155);
-                                        const b = Math.round(100 + (acceptance / 100) * 155);
-                                        infText.style.color = clue.isActive ? '#ff6666' : '#ffdedd';
-                                        infText.style.textShadow = `0 0 12px rgba(${r},${g},${b},0.6)`;
-                                        if (typeof AudioEngine !== 'undefined' && AudioEngine.playBreath) AudioEngine.playBreath();
-                                        setTimeout(() => { clue._gaveGazeFeedback = false; infText.style.textShadow = ''; }, 3000);
-                                    }
-                                }
-                                
-                                infText.style.opacity = '1';
-                                infText.style.color = clue.isActive ? '#ff4444' : 'rgba(200, 50, 50, 0.9)';
-                            }
-                        }
-                    }
+                    try { processEmotionalClue(target, dt, infText); } catch (e) { console.warn('processEmotionalClue failed', e); }
                 }
             } else {
                 // 失去凝視：啟動衰減而非直接歸零（增加可寬容度），並記錄最後失焦物件以支援黏滯
@@ -4176,7 +4177,7 @@
                     if (nowMs - lastRaycastTime >= RAYCAST_INTERVAL) {
                         // divide by 4000 (i.e. /1000 then /4) so the effective dt passed
                         // to checkInteractions approximates a single-frame dt
-                        const realDt = (nowMs - lastRaycastTime) / 3000;  // 除以 4
+                        const realDt = (nowMs - lastRaycastTime) / 2500;  // 除以 2.5 以進行額外的平滑，避免因間隔較長導致的跳動
                         checkInteractions(realDt);
                         lastRaycastTime = nowMs;
                     }
