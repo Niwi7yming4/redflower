@@ -219,6 +219,7 @@
         position: absolute; left: 0; top: 0; width: 100%; height: 100%;
         overflow-x: auto; overflow-y: hidden; cursor: grab;
         scroll-behavior: smooth; display: flex; align-items: center;
+        white-space: nowrap; /* 防止內容換行，讓橫向滾動行為穩定 */
     }
     #gallery-scroll-area:active { cursor: grabbing; }
     #gallery-scroll-area::-webkit-scrollbar { display: none; }
@@ -226,6 +227,8 @@
 
     .corridor-bridge {
         position: relative; height: 100%;
+        width: max-content; /* 讓內容撐開 */
+        min-width: 100%;     /* 至少跟容器一樣寬 */
     }
 
     /* 進度線 */
@@ -1615,8 +1618,11 @@
             const missCount = data.missedPerFragment[fragmentId] || 0;
             const hints = fragmentHints[fragmentId];
             if (!hints) return '——';
-            if (missCount === 0) return hints.poetic;
-            if (missCount === 1) return hints.scene;
+            // missCount: 1 => first miss => poetic
+            //            2 => second miss => scene
+            //           >=3 => direct
+            if (missCount === 1) return hints.poetic;
+            if (missCount === 2) return hints.scene;
             return hints.direct;
         }
 
@@ -3842,12 +3848,17 @@
     function render() {
         const currentCount = playerCognition?.collectedPoemFragments?.size || 0;
         const totalLineWidth = (TOTAL_FRAGMENTS - 1) * DOT_SPACING;
-        const halfLine = Math.round(totalLineWidth / 2);
+        // 以卡片寬度為基準決定起始偏移，確保第一張卡不會被裁切
+        const CARD_NORMAL_WIDTH = 640;
+        const CARD_FINAL_WIDTH = 768; // final-card
+        const baseOffset = Math.ceil(CARD_NORMAL_WIDTH / 2); // 讓第一張卡的左邊緣對齊容器左側
+        const corridorWidth = Math.max(window.innerWidth || 0, totalLineWidth + baseOffset + CARD_FINAL_WIDTH + 120);
+
         let html = `
             <button class="gallery-close-btn" onclick="GallerySystem.close()">離開</button>
             <div id="gallery-scroll-area">
-                <div class="corridor-bridge" style="width: calc(100vw + ${totalLineWidth + 400}px);">
-                    <div class="progress-line" style="width: ${totalLineWidth}px; left: calc(50vw - ${halfLine}px);">
+                <div class="corridor-bridge" style="width: ${corridorWidth}px;">
+                    <div class="progress-line" style="width: ${totalLineWidth}px; left: ${baseOffset}px;">
         `;
         for (let i = 1; i <= TOTAL_FRAGMENTS; i++) {
             const isSpecial = PAINTINGS.some(p => p.count === i);
@@ -3862,7 +3873,9 @@
             const cardClass = `gallery-card ${isUnlocked ? 'unlocked' : 'locked'} ${isFinal ? 'final-card' : ''}`;
             const xPos = (item.count - 1) * DOT_SPACING;
             const topPos = `calc(45% + ${item.yOffset}px)`;
-            const leftPos = `calc(50vw - ${halfLine}px + ${xPos}px)`;
+            // 以 baseOffset 平移，leftPos 為卡片中心的像素座標（配合 transform: translateX(-50%)）
+            const leftPx = xPos + baseOffset;
+            const leftPos = `${leftPx}px`;
             const imgSrc = `${GALLERY_BASE_PATH}gallery_${String(index+1).padStart(2,'0')}.png`;
             const caption = hoverTexts[index] || item.title;
             const titleAttr = isUnlocked ? `title="${caption.replace(/"/g, '&quot;')}"` : '';
@@ -3908,7 +3921,15 @@
             render();
             overlayElement.classList.add('active');
             const scrollArea = document.getElementById('gallery-scroll-area');
-            if (scrollArea) scrollArea.scrollLeft = 0;
+            if (scrollArea) {
+                // 初始從最左側開始顯示（確保前幾張圖可見）
+                try {
+                    scrollArea.scrollLeft = 0;
+                    requestAnimationFrame(() => { try { scrollArea.scrollLeft = 0; } catch(e) { console.warn('gallery scroll reset failed', e); } });
+                } catch (e) {
+                    scrollArea.scrollLeft = 0;
+                }
+            }
 
             // 依序顯示卡片，計時器存入 cardShowTimers 以便清除
             PAINTINGS.forEach((_, i) => {
